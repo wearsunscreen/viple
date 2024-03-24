@@ -4,6 +4,7 @@ import (
 	"image/color"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -69,8 +70,8 @@ func main() {
 }
 
 func init() {
-	source := rand.NewSource(2)
-	//source := rand.NewSource(time.Now().UnixNano())
+	//source := rand.NewSource(2) // seeding the random number generator can be useful in debugging
+	source := rand.NewSource(time.Now().UnixNano())
 	rng = rand.New(source)
 }
 
@@ -89,10 +90,20 @@ func detectTriples(arr [][]int) [][]bool {
 		triplesMask[i] = make([]bool, numColumns)
 	}
 
-	for y, row := range arr[:len(arr)-2] {
+	// find all horizontal triples
+	for y, row := range arr[:len(arr)] {
 		for x := range arr[:len(row)-2] {
 			if arr[y][x] == arr[y][x+1] && arr[y][x] == arr[y][x+2] {
 				triplesMask[y][x], triplesMask[y][x+1], triplesMask[y][x+2] = true, true, true
+			}
+		}
+	}
+
+	// find all vertical triples
+	for y, row := range arr[:len(arr)-2] {
+		for x := range arr[:len(row)] {
+			if arr[y][x] == arr[y+1][x] && arr[y][x] == arr[y+2][x] {
+				triplesMask[y][x], triplesMask[y+1][x], triplesMask[y+2][x] = true, true, true
 			}
 		}
 	}
