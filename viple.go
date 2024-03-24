@@ -47,6 +47,7 @@ var (
 	darkCoal         = color.RGBA{0x2e, 0x34, 0x36, 0xff}
 
 	gameColors = [6]color.Color{lightButter, mediumChameleon, darkChocolate, mediumPlum, mediumSkyBlue, darkScarletRed}
+	rng        *rand.Rand
 )
 
 type Game struct {
@@ -65,6 +66,12 @@ func main() {
 	if err := ebiten.RunGame(newGame()); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func init() {
+	source := rand.NewSource(2)
+	//source := rand.NewSource(time.Now().UnixNano())
+	rng = rand.New(source)
 }
 
 func any(bools []bool) bool {
@@ -108,7 +115,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 func fillRandom(arr [][]int, upTo int) {
 	for i := range arr {
 		for j := range arr[i] {
-			arr[i][j] = rand.Intn(upTo) // Generate random number between 0 (inclusive) and upTo (exclusive)
+			arr[i][j] = rng.Intn(upTo) // Generate random number between 0 (inclusive) and upTo (exclusive)
 		}
 	}
 }
@@ -125,10 +132,12 @@ func newGame() *Game {
 	g := Game{
 		maxColors: 5,
 	}
+
 	g.grid = make([][]int, numRows)
 	for i := range g.grid {
 		g.grid[i] = make([]int, numColumns)
 	}
+
 	fillRandom(g.grid, 6)
 	return &g
 }
