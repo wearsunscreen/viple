@@ -67,16 +67,30 @@ func main() {
 	}
 }
 
-/*
-func detectTriples(arr [][]any) [][]bool {
-	triples = make([len(arr)][len(arr[0])])
-	for y, row := range arr[:len(arr)-2] {
-		for x, col := range arr[:len(row)-2] {
-			if arr[y][x] == arr[y][x+1] and arr[y][x] == arr[y][x+2]
+func any(bools []bool) bool {
+	for _, value := range bools {
+		if value {
+			return true
 		}
 	}
+	return false
 }
-*/
+
+func detectTriples(arr [][]int) [][]bool {
+	triplesMask := make([][]bool, numRows)
+	for i := range triplesMask {
+		triplesMask[i] = make([]bool, numColumns)
+	}
+
+	for y, row := range arr[:len(arr)-2] {
+		for x := range arr[:len(row)-2] {
+			if arr[y][x] == arr[y][x+1] && arr[y][x] == arr[y][x+2] {
+				triplesMask[y][x], triplesMask[y][x+1], triplesMask[y][x+2] = true, true, true
+			}
+		}
+	}
+	return triplesMask
+}
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	ebitenutil.DebugPrint(screen, version)
@@ -109,7 +123,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func newGame() *Game {
 	g := Game{
-		maxColors: 6,
+		maxColors: 5,
 	}
 	g.grid = make([][]int, numRows)
 	for i := range g.grid {
@@ -120,5 +134,12 @@ func newGame() *Game {
 }
 
 func (g *Game) Update() error {
+	triplesMask := detectTriples(g.grid)
+	for lineNum, bools := range triplesMask {
+		if any(bools) {
+			log.Println("Triple found in line ", lineNum)
+		}
+	}
+
 	return nil
 }
