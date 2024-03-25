@@ -61,6 +61,7 @@ type Point struct {
 
 type Game struct {
 	cursorPoint Point
+	swapPoint   Point
 	frameCount  int
 	grid        [][]int
 	keys        []ebiten.Key
@@ -181,6 +182,7 @@ func newGame() *Game {
 	g := Game{
 		maxColors:   5,
 		cursorPoint: Point{numColumns / 2, numRows / 2},
+		swapPoint:   Point{-1, -1},
 	}
 
 	g.grid = make([][]int, numRows)
@@ -197,21 +199,52 @@ func newGame() *Game {
 	return &g
 }
 
+// Exchange positions of two neighboring points, return false if unable to exchange.
+// The exchange fails if swap point and cursor point are the same (this can happen when
+// player attempts to move off the grid). The exchange fails if both points have the
+// same value.
+func SwapPoints(g *Game) bool {
+	if g.swapPoint == g.cursorPoint {
+		g.swapPoint = Point{-1, -1} // indicates we are no longer attempting to swap
+		return false
+	}
+	if g.grid[g.swapPoint.y][g.swapPoint.x] == g.grid[g.cursorPoint.y][g.cursorPoint.x] {
+		g.swapPoint = Point{-1, -1} // indicates we are no longer attempting to swap
+		return false
+	}
+
+	temp := g.grid[g.swapPoint.y][g.swapPoint.x]
+	g.grid[g.swapPoint.y][g.swapPoint.x] = g.grid[g.cursorPoint.y][g.cursorPoint.x]
+	g.grid[g.cursorPoint.y][g.cursorPoint.x] = temp
+	g.swapPoint = Point{-1, -1} // indicates we are no longer attempting to swap
+	return true
+}
+
 func (g *Game) Update() error {
 	g.frameCount++
 	g.keys = inpututil.AppendPressedKeys(g.keys[:0])
 	for _, k := range g.keys {
-		keyName := ebiten.KeyName(k)
 		if inpututil.IsKeyJustPressed(k) {
-			switch keyName {
-			case "j":
+			switch k {
+			case ebiten.KeyJ:
 				g.cursorPoint.x = max(g.cursorPoint.x-1, 0)
-			case "l":
-				g.cursorPoint.x = min(g.cursorPoint.x+1, numColumns)
-			case "i":
+			case ebiten.KeyL:
+				g.cursorPoint.x = min(g.cursorPoint.x+1, numColumns-1)
+			case ebiten.KeyI:
 				g.cursorPoint.y = max(g.cursorPoint.y-1, 0)
-			case "k":
-				g.cursorPoint.y = min(g.cursorPoint.y+1, numRows)
+			case ebiten.KeyK:
+				g.cursorPoint.y = min(g.cursorPoint.y+1, numRows-1)
+			case ebiten.KeySpace:
+				if g.swapPoint.x == -1 {
+					// initiating a swap
+					g.swapPoint = g.cursorPoint
+				}
+			}
+			if g.swapPoint.x != -1 && g.swapPoint != g.cursorPoint {
+				if result := SwapPoints(g); !result {
+					// TODO: play a buzzer noise to indicate failure
+					log.Println("BUZZZ")
+				}
 			}
 		}
 	}
