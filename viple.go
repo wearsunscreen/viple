@@ -4,19 +4,22 @@ import (
 	"image/color"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
-	version    = "Viple 0.1"
-	margin     = 20
-	cellSize   = 30
-	numRows    = 20
-	numColumns = 10
+	version       = "Viple 0.1"
+	margin        = 20
+	cellSize      = 30
+	numRows       = 11
+	numColumns    = 5
+	blinkInverval = 60 * 2 / 3
 )
 
 var (
@@ -57,10 +60,12 @@ type Point struct {
 }
 
 type Game struct {
+	cursorPoint Point
+	frameCount  int
 	grid        [][]int
+	keys        []ebiten.Key
 	maxColors   int
 	triplesMask [][]bool
-	cursorPoint Point
 }
 
 /* todo
@@ -112,40 +117,47 @@ func detectTriples(g *Game) {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, version)
-
 	// draw background
 	screen.Fill(mediumCoal)
+	ebitenutil.DebugPrint(screen, version)
 
+	// find triples
 	detectTriples(g)
+
+	// draw cells
+	for y, row := range g.grid {
+		for x, col := range row {
+			vector.DrawFilledRect(screen, float32(cellSize*x+margin+2), float32(cellSize*y+margin+2), cellSize-4, cellSize-4, gameColors[col], false)
+		}
+	}
 
 	// draw outlines of triples
 	for y, row := range g.grid {
 		for x := range row {
 			if g.triplesMask[y][x] {
-				rect := ebiten.NewImage(cellSize, cellSize)
-				rect.Fill(lightGreen)
-				op := &ebiten.DrawImageOptions{}
-				op.GeoM.Translate(float64(cellSize*x+margin), float64(cellSize*y+margin))
-				screen.DrawImage(rect, op)
+				vector.StrokeRect(screen, float32(cellSize*x+margin), float32(cellSize*y+margin), cellSize, cellSize, 4, lightGreen, false)
 			}
 		}
 	}
 
-	// draw cells
-	for y, row := range g.grid {
-		for x, col := range row {
-			rect := ebiten.NewImage(cellSize-4, cellSize-4)
-			rect.Fill(gameColors[col])
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(cellSize*x+margin+2), float64(cellSize*y+margin+2))
-			screen.DrawImage(rect, op)
+	// draw cursor
+	cursorColor := color.White
+	if g.frameCount/blinkInverval%2 == 1 {
+		cursorColor = color.Black
+	}
+	vector.StrokeRect(screen, float32(cellSize*g.cursorPoint.x+margin), float32(cellSize*g.cursorPoint.y+margin),
+		cellSize, cellSize, 4, cursorColor, false)
+
+	// draw pressed keys
+	var keyStrs []string
+	var keyNames []string
+	for _, k := range g.keys {
+		keyStrs = append(keyStrs, k.String())
+		if name := ebiten.KeyName(k); name != "" {
+			keyNames = append(keyNames, name)
 		}
 	}
-
-	// draw cursor
-	vector.StrokeRect(screen, 50, 50, 100, 100, 5, color.White, false)
-
+	ebitenutil.DebugPrint(screen, strings.Join(keyStrs, ", ")+"\n"+strings.Join(keyNames, ", "))
 }
 
 func fillRandom(arr [][]int, upTo int) {
@@ -168,7 +180,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func newGame() *Game {
 	g := Game{
 		maxColors:   5,
-		cursorPoint: Point{numRows / 2, numColumns / 2},
+		cursorPoint: Point{numColumns / 2, numRows / 2},
 	}
 
 	g.grid = make([][]int, numRows)
@@ -186,5 +198,22 @@ func newGame() *Game {
 }
 
 func (g *Game) Update() error {
+	g.frameCount++
+	g.keys = inpututil.AppendPressedKeys(g.keys[:0])
+	for _, k := range g.keys {
+		keyName := ebiten.KeyName(k)
+		if inpututil.IsKeyJustPressed(k) {
+			switch keyName {
+			case "j":
+				g.cursorPoint.x = max(g.cursorPoint.x-1, 0)
+			case "l":
+				g.cursorPoint.x = min(g.cursorPoint.x+1, numColumns)
+			case "i":
+				g.cursorPoint.y = max(g.cursorPoint.y-1, 0)
+			case "k":
+				g.cursorPoint.y = min(g.cursorPoint.y+1, numRows)
+			}
+		}
+	}
 	return nil
 }
