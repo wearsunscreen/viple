@@ -13,10 +13,10 @@ type Drawer interface {
 }
 
 type Mover struct {
-	startFrame  int
-	endFrame    int
-	startOffset Point
-	endOffset   Point
+	startFrame int
+	endFrame   int
+	startPoint Point
+	endPoint   Point
 }
 
 type Point struct {
@@ -36,8 +36,8 @@ func (square *Square) AddMover(startFrame int, duration int, from Point, to Poin
 
 	mover.startFrame = startFrame
 	mover.endFrame = startFrame + duration
-	mover.startOffset = from
-	mover.endOffset = to
+	mover.startPoint = from
+	mover.endPoint = to
 
 	square.mover = mover
 }
@@ -52,8 +52,8 @@ func squareToScreenPoint(squareXY Point) Point {
 
 func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
 	completionRatio := float64(mover.endFrame-frameCount) / float64(mover.endFrame-mover.startFrame)
-	startPosition := squareToScreenPoint(mover.startOffset)
-	endPosition := squareToScreenPoint(mover.endOffset)
+	startPosition := squareToScreenPoint(mover.startPoint)
+	endPosition := squareToScreenPoint(mover.endPoint)
 	op.GeoM.Translate(
 		float64(startPosition.x)+(completionRatio*float64(endPosition.x-startPosition.x)),
 		float64(startPosition.y)+(completionRatio*float64(endPosition.y-startPosition.y)))

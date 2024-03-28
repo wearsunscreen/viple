@@ -206,8 +206,8 @@ func SwapSquares(g *Game) bool {
 	fromSquare.color = toSquare.color
 	toSquare.color = temp
 
-	fromSquare.AddMover(g.frameCount, 120, toSquare.point, fromSquare.point)
-	toSquare.AddMover(g.frameCount, 120, fromSquare.point, toSquare.point)
+	fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
+	toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
 
 	g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 	return true
