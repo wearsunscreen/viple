@@ -4,9 +4,9 @@ import (
 	"image/color"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -64,23 +64,6 @@ type Game struct {
 	triplesMask  [][]bool
 }
 
-type Modifier struct {
-	startFrame  int
-	endFrame    int
-	startOffset [2]int
-	endOffset   [2]int
-}
-
-type Square struct {
-	color     int
-	modifiers []Modifier
-	point     Point
-}
-
-type Point struct {
-	x, y int
-}
-
 /* todo
 - quit with ":q", ":x", ":exit"
 - animation
@@ -95,8 +78,8 @@ func main() {
 }
 
 func init() {
-	source := rand.NewSource(3) // seeding the random number generator can be useful in debugging
-	//source := rand.NewSource(time.Now().UnixNano())
+	//source := rand.NewSource(3) // seeding the random number generator can be useful in debugging
+	source := rand.NewSource(time.Now().UnixNano())
 	rng = rand.New(source)
 }
 
@@ -123,7 +106,7 @@ func detectTriples(g *Game) {
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(mediumCoal)
-	ebitenutil.DebugPrint(screen, version)
+	//ebitenutil.DebugPrint(screen, version)
 
 	// find triples
 	detectTriples(g)
@@ -131,7 +114,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// draw cells
 	for y, row := range g.grid {
 		for x, _ := range row {
-			DrawSquare(screen, &g.grid[y][x], g.frameCount)
+			g.grid[y][x].Draw(screen, g.frameCount)
 		}
 	}
 
@@ -156,26 +139,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	vector.StrokeRect(screen, float32(cellSize*g.cursorSquare.x+margin), float32(cellSize*g.cursorSquare.y+margin),
 		cellSize, cellSize, cursorWidth, cursorColors[blink], false)
-}
-
-func applyModifier(m *Modifier, op *ebiten.DrawImageOptions, frameCount int) {
-	var completionRatio float64
-	completionRatio = float64(m.endFrame-frameCount) / float64(m.endFrame-m.startFrame)
-	op.GeoM.Translate(
-		float64(m.startOffset[0])+(completionRatio*float64(m.endOffset[0]-m.startOffset[0])),
-		float64(m.startOffset[1])+(completionRatio*float64(m.endOffset[0]-m.startOffset[1])))
-}
-
-func DrawSquare(screen *ebiten.Image, square *Square, frameCount int) {
-	//vector.DrawFilledRect(screen, float32(cellSize*x+margin+2), float32(cellSize*y+margin+2), cellSize-4, cellSize-4, gameColors[color], false)
-	rect := ebiten.NewImage(cellSize-4, cellSize-4)
-	rect.Fill(gameColors[square.color])
-	op := &ebiten.DrawImageOptions{}
-	for _, m := range square.modifiers {
-		applyModifier(&m, op, frameCount)
-	}
-	op.GeoM.Translate(cellSize*float64(square.point.x)+margin+2, cellSize*float64(square.point.y)+margin+2)
-	screen.DrawImage(rect, op)
 }
 
 func fillRandom(g *Game, upTo int) {
@@ -236,22 +199,15 @@ func SwapSquares(g *Game) bool {
 		return false
 	}
 
-	temp := g.grid[g.swapSquare.y][g.swapSquare.x].color
-	g.grid[g.swapSquare.y][g.swapSquare.x].color = g.grid[g.cursorSquare.y][g.cursorSquare.x].color
-	g.grid[g.cursorSquare.y][g.cursorSquare.x].color = temp
+	fromSquare := &g.grid[g.swapSquare.y][g.swapSquare.x]
+	toSquare := &g.grid[g.cursorSquare.y][g.cursorSquare.x]
 
-	// Bugbug: this will delete all existing modifiers
-	// add animation
-	mover := Modifier{
-		startFrame:  g.frameCount,
-		endFrame:    g.frameCount + 120,
-		startOffset: [2]int{20, 20},
-		endOffset:   [2]int{40, 40}}
+	temp := fromSquare.color
+	fromSquare.color = toSquare.color
+	toSquare.color = temp
 
-	newModifiers := []Modifier{mover}
-
-	g.grid[g.swapSquare.y][g.swapSquare.x].modifiers = newModifiers
-	g.grid[g.swapSquare.y][g.swapSquare.x].modifiers = newModifiers
+	fromSquare.AddMover(g.frameCount, 120, toSquare.point, fromSquare.point)
+	toSquare.AddMover(g.frameCount, 120, fromSquare.point, toSquare.point)
 
 	g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 	return true
