@@ -4,6 +4,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+// interface for things that are drawn to an image, screen
 type Drawer interface {
 	SetZ(z int)
 	GetZ() int
@@ -11,7 +12,7 @@ type Drawer interface {
 	AddMover(startFrame int, duration int, from Point, to Point)
 }
 
-type Modifier struct {
+type Mover struct {
 	startFrame  int
 	endFrame    int
 	startOffset Point
@@ -23,31 +24,39 @@ type Point struct {
 }
 
 type Square struct {
-	color     int
-	modifiers []Modifier
-	point     Point
-	z         int
+	color int
+	mover *Mover
+	point Point
+	z     int
 }
 
-func (square *Square) AddMover(startFrame int, duration int, to Point, from Point) {
-	// Bugbug: this will delete all existing modifiers
+func (square *Square) AddMover(startFrame int, duration int, from Point, to Point) {
 	// add animation
-	mover := Modifier{
-		startFrame:  startFrame,
-		endFrame:    startFrame + duration,
-		startOffset: Point{20, 20},
-		endOffset:   Point{40, 40},
-	}
+	mover := new(Mover)
 
-	square.modifiers = []Modifier{mover}
+	mover.startFrame = startFrame
+	mover.endFrame = startFrame + duration
+	mover.startOffset = from
+	mover.endOffset = to
+
+	square.mover = mover
 }
 
-func applyModifier(m *Modifier, op *ebiten.DrawImageOptions, frameCount int) {
-	var completionRatio float64
-	completionRatio = float64(m.endFrame-frameCount) / float64(m.endFrame-m.startFrame)
+// convert the x,y of the square into screen coordinates
+func squareToScreenPoint(squareXY Point) Point {
+	return Point{
+		cellSize*squareXY.x + margin + 2,
+		cellSize*squareXY.y + margin + 2,
+	}
+}
+
+func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
+	completionRatio := float64(mover.endFrame-frameCount) / float64(mover.endFrame-mover.startFrame)
+	startPosition := squareToScreenPoint(mover.startOffset)
+	endPosition := squareToScreenPoint(mover.endOffset)
 	op.GeoM.Translate(
-		float64(m.startOffset.y)+(completionRatio*float64(m.endOffset.y-m.startOffset.y)),
-		float64(m.startOffset.x)+(completionRatio*float64(m.endOffset.x-m.startOffset.x)))
+		float64(startPosition.x)+(completionRatio*float64(endPosition.x-startPosition.x)),
+		float64(startPosition.y)+(completionRatio*float64(endPosition.y-startPosition.y)))
 }
 
 func (square *Square) Draw(screen *ebiten.Image, frameCount int) {
@@ -55,10 +64,12 @@ func (square *Square) Draw(screen *ebiten.Image, frameCount int) {
 	rect := ebiten.NewImage(cellSize-4, cellSize-4)
 	rect.Fill(gameColors[square.color])
 	op := &ebiten.DrawImageOptions{}
-	for _, m := range square.modifiers {
-		applyModifier(&m, op, frameCount)
+	if square.mover != nil {
+		applyMover(square.mover, op, frameCount)
+	} else {
+		p := squareToScreenPoint(square.point)
+		op.GeoM.Translate(float64(p.x), float64(p.y))
 	}
-	op.GeoM.Translate(cellSize*float64(square.point.x)+margin+2, cellSize*float64(square.point.y)+margin+2)
 	screen.DrawImage(rect, op)
 }
 

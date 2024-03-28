@@ -215,17 +215,13 @@ func SwapSquares(g *Game) bool {
 
 func (g *Game) Update() error {
 	g.frameCount++
-	// clear all expired Modifiers
+	// clear movers if expired
 	for y, row := range g.grid {
 		for x, _ := range row {
-			if len(g.grid[y][x].modifiers) > 0 {
-				newModifiers := []Modifier{}
-				for _, m := range g.grid[y][x].modifiers {
-					if g.frameCount < m.endFrame {
-						newModifiers = append(newModifiers, m)
-					}
+			if g.grid[y][x].mover != nil {
+				if g.grid[y][x].mover.endFrame < g.frameCount {
+					g.grid[y][x].mover = nil
 				}
-				g.grid[y][x].modifiers = newModifiers
 			}
 		}
 	}
