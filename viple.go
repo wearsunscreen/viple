@@ -55,6 +55,7 @@ var (
 )
 
 type Game struct {
+	filledMask   [][]bool
 	cursorSquare Point
 	swapSquare   Point
 	frameCount   int
@@ -78,9 +79,9 @@ func main() {
 }
 
 func init() {
-	//source := rand.NewSource(3) // seeding the random number generator can be useful in debugging
-	source := rand.NewSource(time.Now().UnixNano())
-	rng = rand.New(source)
+	seed := time.Now().UnixNano() % 10000
+	log.Println("Random seed is ", seed)
+	rng = rand.New(rand.NewSource(seed))
 }
 
 func detectTriples(g *Game) {
@@ -89,6 +90,8 @@ func detectTriples(g *Game) {
 		for x := range g.grid[:len(row)-2] {
 			if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
 				g.triplesMask[y][x], g.triplesMask[y][x+1], g.triplesMask[y][x+2] = true, true, true
+				g.grid[y][x].color, g.grid[y][x+1].color, g.grid[y][x+2].color = -1, -1, -1
+				markForDeletion(g, Point{x, y}, Point{x + 1, y}, Point{x + 2, y})
 			}
 		}
 	}
@@ -98,18 +101,19 @@ func detectTriples(g *Game) {
 		for x := range g.grid[:len(row)] {
 			if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
 				g.triplesMask[y][x], g.triplesMask[y+1][x], g.triplesMask[y+2][x] = true, true, true
+				g.grid[y][x].color, g.grid[y+1][x].color, g.grid[y+2][x].color = -1, -1, -1
 			}
 		}
 	}
 }
 
+func markForDeletion(g *Game, p1, p2, p3 Point) {
+
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(mediumCoal)
-	//ebitenutil.DebugPrint(screen, version)
-
-	// find triples
-	detectTriples(g)
 
 	// draw cells
 	for y, row := range g.grid {
@@ -206,8 +210,8 @@ func SwapSquares(g *Game) bool {
 	fromSquare.color = toSquare.color
 	toSquare.color = temp
 
-	fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
-	toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
+	fromSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
+	toSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
 
 	g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 	return true
@@ -221,6 +225,7 @@ func (g *Game) Update() error {
 			if g.grid[y][x].mover != nil {
 				if g.grid[y][x].mover.endFrame < g.frameCount {
 					g.grid[y][x].mover = nil
+					detectTriples(g)
 				}
 			}
 		}

@@ -60,17 +60,19 @@ func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
 }
 
 func (square *Square) Draw(screen *ebiten.Image, frameCount int) {
-	//vector.DrawFilledRect(screen, float32(cellSize*x+margin+2), float32(cellSize*y+margin+2), cellSize-4, cellSize-4, gameColors[color], false)
-	rect := ebiten.NewImage(cellSize-4, cellSize-4)
-	rect.Fill(gameColors[square.color])
-	op := &ebiten.DrawImageOptions{}
-	if square.mover != nil {
-		applyMover(square.mover, op, frameCount)
-	} else {
-		p := squareToScreenPoint(square.point)
-		op.GeoM.Translate(float64(p.x), float64(p.y))
+	if square.color >= 0 {
+		//vector.DrawFilledRect(screen, float32(cellSize*x+margin+2), float32(cellSize*y+margin+2), cellSize-4, cellSize-4, gameColors[color], false)
+		rect := ebiten.NewImage(cellSize-4, cellSize-4)
+		rect.Fill(gameColors[square.color])
+		op := &ebiten.DrawImageOptions{}
+		if square.mover != nil {
+			applyMover(square.mover, op, frameCount)
+		} else {
+			p := squareToScreenPoint(square.point)
+			op.GeoM.Translate(float64(p.x), float64(p.y))
+		}
+		screen.DrawImage(rect, op)
 	}
-	screen.DrawImage(rect, op)
 }
 
 func (square *Square) GetZ() int {
