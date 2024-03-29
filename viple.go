@@ -85,13 +85,14 @@ func init() {
 }
 
 func detectTriples(g *Game) {
+	found := false
 	// find all horizontal triples
 	for y, row := range g.grid[:len(g.grid)] {
 		for x := range g.grid[:len(row)-2] {
 			if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
 				g.triplesMask[y][x], g.triplesMask[y][x+1], g.triplesMask[y][x+2] = true, true, true
 				g.grid[y][x].color, g.grid[y][x+1].color, g.grid[y][x+2].color = -1, -1, -1
-				markForDeletion(g, Point{x, y}, Point{x + 1, y}, Point{x + 2, y})
+				found = true
 			}
 		}
 	}
@@ -102,13 +103,38 @@ func detectTriples(g *Game) {
 			if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
 				g.triplesMask[y][x], g.triplesMask[y+1][x], g.triplesMask[y+2][x] = true, true, true
 				g.grid[y][x].color, g.grid[y+1][x].color, g.grid[y+2][x].color = -1, -1, -1
+				found = true
+			}
+		}
+	}
+	if found {
+		fillEmpties(g)
+	}
+}
+
+func fillEmpties(g *Game) {
+	for x := range numColumns {
+		for y := range numRows {
+			y = numRows - 1 - y
+			if g.grid[y][x].color == -1 {
+				above := findSquareAbove(g, Point{x, y})
+				if above.y >= 0 {
+					g.grid[y][x].color = g.grid[above.y][above.x].color
+					g.grid[above.y][above.x].color = -1
+				}
 			}
 		}
 	}
 }
 
-func markForDeletion(g *Game, p1, p2, p3 Point) {
-
+func findSquareAbove(g *Game, p Point) Point {
+	for y := range p.y {
+		y = p.y - 1 - y
+		for g.grid[y][p.x].color != -1 {
+			return Point{p.x, y}
+		}
+	}
+	return Point{-1, -1} // did not find a square with color
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
