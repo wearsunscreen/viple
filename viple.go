@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"image/color"
 	"log"
 	"math/rand"
@@ -12,12 +13,14 @@ import (
 )
 
 const (
-	version       = "Viple 0.1"
-	margin        = 20
+	blinkInverval = 60 / 2
 	cellSize      = 30
+	dropDuration  = 60
+	margin        = 20
 	numRows       = 11
 	numColumns    = 5
-	blinkInverval = 60 / 2
+	swapDuration  = 40
+	version       = "Viple 0.1"
 )
 
 var (
@@ -71,6 +74,11 @@ type Game struct {
 */
 
 func main() {
+	var seed int
+	flag.IntVar(&seed, "seed", 0, "Seed for random number generation")
+	flag.Parse()
+	seedRNG(int64(seed))
+
 	ebiten.SetWindowSize(gameDimensions())
 	ebiten.SetWindowTitle("Hello, World!")
 	if err := ebiten.RunGame(newGame()); err != nil {
@@ -78,21 +86,17 @@ func main() {
 	}
 }
 
-func init() {
-	seed := time.Now().UnixNano() % 10000
-	log.Println("Random seed is ", seed)
-	rng = rand.New(rand.NewSource(seed))
-}
-
 func detectTriples(g *Game) {
 	found := false
 	// find all horizontal triples
 	for y, row := range g.grid[:len(g.grid)] {
 		for x := range g.grid[:len(row)-2] {
-			if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
-				g.triplesMask[y][x], g.triplesMask[y][x+1], g.triplesMask[y][x+2] = true, true, true
-				g.grid[y][x].color, g.grid[y][x+1].color, g.grid[y][x+2].color = -1, -1, -1
-				found = true
+			if g.grid[y][x].color >= 0 { // if is a color
+				if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
+					g.triplesMask[y][x], g.triplesMask[y][x+1], g.triplesMask[y][x+2] = true, true, true
+					g.grid[y][x].color, g.grid[y][x+1].color, g.grid[y][x+2].color = -1, -1, -1
+					found = true
+				}
 			}
 		}
 	}
@@ -100,10 +104,12 @@ func detectTriples(g *Game) {
 	// find all vertical triples
 	for y, row := range g.grid[:len(g.grid)-2] {
 		for x := range g.grid[:len(row)] {
-			if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
-				g.triplesMask[y][x], g.triplesMask[y+1][x], g.triplesMask[y+2][x] = true, true, true
-				g.grid[y][x].color, g.grid[y+1][x].color, g.grid[y+2][x].color = -1, -1, -1
-				found = true
+			if g.grid[y][x].color >= 0 { // if is a color
+				if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
+					g.triplesMask[y][x], g.triplesMask[y+1][x], g.triplesMask[y+2][x] = true, true, true
+					g.grid[y][x].color, g.grid[y+1][x].color, g.grid[y+2][x].color = -1, -1, -1
+					found = true
+				}
 			}
 		}
 	}
@@ -121,6 +127,8 @@ func fillEmpties(g *Game) {
 				if above.y >= 0 {
 					g.grid[y][x].color = g.grid[above.y][above.x].color
 					g.grid[above.y][above.x].color = -1
+					g.grid[y][x].AddMover(g.frameCount, dropDuration,
+						g.grid[y][x].point, g.grid[above.y][above.x].point)
 				}
 			}
 		}
@@ -213,6 +221,14 @@ func newGame() *Game {
 
 	fillRandom(&g, 6)
 	return &g
+}
+
+func seedRNG(seed int64) {
+	if seed == 0 {
+		seed = time.Now().UnixNano() % 10000
+	}
+	log.Println("Random seed is ", seed)
+	rng = rand.New(rand.NewSource(seed))
 }
 
 // Exchange positions of two neighboring squares, return false if unable to exchange.
