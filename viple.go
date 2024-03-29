@@ -58,13 +58,13 @@ var (
 )
 
 type Game struct {
-	filledMask   [][]bool
 	cursorSquare Point
 	swapSquare   Point
 	frameCount   int
 	grid         [][]Square
 	keys         []ebiten.Key
 	maxColors    int
+	numColors    int
 	triplesMask  [][]bool
 }
 
@@ -118,33 +118,6 @@ func detectTriples(g *Game) {
 	}
 }
 
-func fillEmpties(g *Game) {
-	for x := range numColumns {
-		for y := range numRows {
-			y = numRows - 1 - y
-			if g.grid[y][x].color == -1 {
-				above := findSquareAbove(g, Point{x, y})
-				if above.y >= 0 {
-					g.grid[y][x].color = g.grid[above.y][above.x].color
-					g.grid[above.y][above.x].color = -1
-					g.grid[y][x].AddMover(g.frameCount, dropDuration,
-						g.grid[y][x].point, g.grid[above.y][above.x].point)
-				}
-			}
-		}
-	}
-}
-
-func findSquareAbove(g *Game, p Point) Point {
-	for y := range p.y {
-		y = p.y - 1 - y
-		for g.grid[y][p.x].color != -1 {
-			return Point{p.x, y}
-		}
-	}
-	return Point{-1, -1} // did not find a square with color
-}
-
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(mediumCoal)
@@ -179,12 +152,57 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		cellSize, cellSize, cursorWidth, cursorColors[blink], false)
 }
 
-func fillRandom(g *Game, upTo int) {
-	for y, row := range g.grid {
-		for x := range row {
-			g.grid[y][x].color = rng.Intn(upTo)
+func fillEmpties(g *Game) {
+	// find empty square and move squares from above down to fill
+	for x := range numColumns {
+		for y := range numRows {
+			y = numRows - 1 - y // work from bottom up
+			if g.grid[y][x].color == -1 {
+				above := findSquareAbove(g, Point{x, y})
+				if above.y >= 0 {
+					g.grid[y][x].color = g.grid[above.y][above.x].color
+					g.grid[above.y][above.x].color = -1
+					g.grid[y][x].AddMover(g.frameCount, dropDuration,
+						g.grid[above.y][above.x].point,
+						g.grid[y][x].point)
+				}
+			}
 		}
 	}
+
+	// fill empties at the top of the grid with newly generated colors
+	for x := range numColumns {
+		for y := range numRows {
+			if g.grid[y][x].color == -1 {
+				g.grid[y][x].color = rng.Intn(g.numColors)
+
+				// there's a bit of a kludge here. The call to offsetPoint should be equal to the height
+				// of the stack squares being removed, but don't calculate that height and just pass
+				// cellsize * -1.
+				g.grid[y][x].AddMover(g.frameCount, dropDuration,
+					offsetPoint(g.grid[y][x].point, Point{0, cellSize * -1}),
+					g.grid[y][x].point)
+			}
+		}
+	}
+}
+
+func fillRandom(g *Game) {
+	for y, row := range g.grid {
+		for x := range row {
+			g.grid[y][x].color = rng.Intn(g.numColors)
+		}
+	}
+}
+
+func findSquareAbove(g *Game, p Point) Point {
+	for y := range p.y {
+		y = p.y - 1 - y
+		for g.grid[y][p.x].color != -1 {
+			return Point{p.x, y}
+		}
+	}
+	return Point{-1, -1} // did not find a square with color
 }
 
 func gameDimensions() (width int, height int) {
@@ -219,8 +237,14 @@ func newGame() *Game {
 		g.triplesMask[i] = make([]bool, numColumns)
 	}
 
-	fillRandom(&g, 6)
+	g.numColors = 6
+	fillRandom(&g)
+
 	return &g
+}
+
+func offsetPoint(p, offset Point) Point {
+	return Point{p.x + offset.x, p.y + offset.y}
 }
 
 func seedRNG(seed int64) {

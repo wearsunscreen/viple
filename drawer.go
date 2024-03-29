@@ -51,7 +51,7 @@ func squareToScreenPoint(squareXY Point) Point {
 }
 
 func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
-	completionRatio := float64(mover.endFrame-frameCount) / float64(mover.endFrame-mover.startFrame)
+	completionRatio := 1 - float64(mover.endFrame-frameCount)/float64(mover.endFrame-mover.startFrame)
 	startPosition := squareToScreenPoint(mover.startPoint)
 	endPosition := squareToScreenPoint(mover.endPoint)
 	op.GeoM.Translate(
