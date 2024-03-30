@@ -19,6 +19,8 @@ const (
 	blinkInverval = 60 / 2
 	cellSize      = 50
 	dropDuration  = 60
+	gemScale      = float64(cellSize) / float64(gemWidth)
+	gemWidth      = 100
 	margin        = 20
 	numRows       = 11
 	numColumns    = 5
@@ -171,10 +173,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		cellSize, cellSize, cursorWidth, cursorColors[blink], false)
 
 	// draw a png
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(0, 0)
-	screen.DrawImage(g.gemImages[0], op)
+	for i := range g.numColors {
+		drawGem(screen, g.gemImages[i], Point{i, i})
+	}
+}
 
+func drawGem(screen *ebiten.Image, image *ebiten.Image, p Point) {
+	op := &ebiten.DrawImageOptions{}
+	pos := SquareToScreenPoint(p)
+	op.GeoM.Translate(float64(pos.x), float64(pos.y))
+	op.GeoM.Scale(gemScale, gemScale)
+	screen.DrawImage(image, op)
 }
 
 func fillEmpties(g *Game) {

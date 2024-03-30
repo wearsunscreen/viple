@@ -43,7 +43,7 @@ func (square *Square) AddMover(startFrame int, duration int, from Point, to Poin
 }
 
 // convert the x,y of the square into screen coordinates
-func squareToScreenPoint(squareXY Point) Point {
+func SquareToScreenPoint(squareXY Point) Point {
 	return Point{
 		cellSize*squareXY.x + margin + 2,
 		cellSize*squareXY.y + margin + 2,
@@ -52,8 +52,8 @@ func squareToScreenPoint(squareXY Point) Point {
 
 func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
 	completionRatio := 1 - float64(mover.endFrame-frameCount)/float64(mover.endFrame-mover.startFrame)
-	startPosition := squareToScreenPoint(mover.startPoint)
-	endPosition := squareToScreenPoint(mover.endPoint)
+	startPosition := SquareToScreenPoint(mover.startPoint)
+	endPosition := SquareToScreenPoint(mover.endPoint)
 	op.GeoM.Translate(
 		float64(startPosition.x)+(completionRatio*float64(endPosition.x-startPosition.x)),
 		float64(startPosition.y)+(completionRatio*float64(endPosition.y-startPosition.y)))
@@ -68,7 +68,7 @@ func (square *Square) Draw(screen *ebiten.Image, frameCount int) {
 		if square.mover != nil {
 			applyMover(square.mover, op, frameCount)
 		} else {
-			p := squareToScreenPoint(square.point)
+			p := SquareToScreenPoint(square.point)
 			op.GeoM.Translate(float64(p.x), float64(p.y))
 		}
 		screen.DrawImage(rect, op)
