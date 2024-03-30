@@ -12,7 +12,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
@@ -152,31 +151,22 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	// draw cells
+	// draw cursor
+	cursorColors := [2]color.Color{color.White, color.Black}
+	blink := g.frameCount / blinkInverval % 2
+	if g.swapSquare.x != -1 {
+		// we are in swap mode, faster blink, brighter colors
+		blink = g.frameCount / (blinkInverval / 2) % 2
+		cursorColors = [2]color.Color{brightRed, lightButter}
+	}
+	g.grid[g.cursorSquare.y][g.cursorSquare.x].DrawBackground(screen, cursorColors[blink])
+
+	// draw gems
 	for y, row := range g.grid {
 		for x, _ := range row {
 			g.grid[y][x].DrawGem(screen, g.gemImages[g.grid[y][x].color], g.frameCount)
 		}
 	}
-
-	// draw cursor
-	cursorColors := [2]color.Color{color.White, color.Black}
-	blink := g.frameCount / blinkInverval % 2
-	var cursorWidth float32 = 4
-	if g.swapSquare.x != -1 {
-		// we are in swap mode, faster blink, brighter colors
-		blink = g.frameCount / (blinkInverval / 2) % 2
-		cursorColors = [2]color.Color{brightRed, lightButter}
-		cursorWidth = 6
-	}
-	vector.StrokeRect(screen, float32(cellSize*g.cursorSquare.x+margin), float32(cellSize*g.cursorSquare.y+margin),
-		cellSize, cellSize, cursorWidth, cursorColors[blink], false)
-
-	/* draw a png
-	for i := range g.numColors {
-		DrawGem(screen, g.gemImages[i], Point{i, i})
-	}
-	*/
 }
 
 func fillEmpties(g *Game) {
