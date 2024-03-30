@@ -19,7 +19,7 @@ const (
 	blinkInverval = 60 / 2
 	cellSize      = 50
 	dropDuration  = 60
-	gemScale      = float64(cellSize) / float64(gemWidth)
+	gemScale      = float64(cellSize-4) / float64(gemWidth)
 	gemWidth      = 100
 	margin        = 20
 	numRows       = 11
@@ -143,20 +143,22 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(mediumCoal)
 
-	// draw cells
-	for y, row := range g.grid {
-		for x, _ := range row {
-			g.grid[y][x].Draw(screen, g.frameCount)
-		}
-	}
-
 	// draw outlines of triples
 	for y, row := range g.grid {
 		for x := range row {
 			if g.triplesMask[y][x] {
-				vector.StrokeRect(screen, float32(cellSize*x+margin), float32(cellSize*y+margin), cellSize, cellSize, 4, lightGreen, false)
+				g.grid[y][x].DrawBackground(screen, darkButter)
+				//vector.StrokeRect(screen, float32(cellSize*x+margin), float32(cellSize*y+margin), cellSize, cellSize, 4, lightGreen, false)
 			}
 		}
+
+		// draw cells
+		for y, row := range g.grid {
+			for x, _ := range row {
+				g.grid[y][x].DrawGem(screen, g.gemImages[g.grid[y][x].color], g.frameCount)
+			}
+		}
+
 	}
 
 	// draw cursor
@@ -172,18 +174,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	vector.StrokeRect(screen, float32(cellSize*g.cursorSquare.x+margin), float32(cellSize*g.cursorSquare.y+margin),
 		cellSize, cellSize, cursorWidth, cursorColors[blink], false)
 
-	// draw a png
+	/* draw a png
 	for i := range g.numColors {
-		drawGem(screen, g.gemImages[i], Point{i, i})
+		DrawGem(screen, g.gemImages[i], Point{i, i})
 	}
-}
-
-func drawGem(screen *ebiten.Image, image *ebiten.Image, p Point) {
-	op := &ebiten.DrawImageOptions{}
-	pos := SquareToScreenPoint(p)
-	op.GeoM.Translate(float64(pos.x), float64(pos.y))
-	op.GeoM.Scale(gemScale, gemScale)
-	screen.DrawImage(image, op)
+	*/
 }
 
 func fillEmpties(g *Game) {
