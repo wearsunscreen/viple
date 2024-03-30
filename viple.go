@@ -6,6 +6,7 @@ import (
 	_ "image/png"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -64,7 +65,7 @@ type Game struct {
 	swapSquare   Point
 	frameCount   int
 	grid         [][]Square
-	image        *ebiten.Image
+	gemImages    []*ebiten.Image
 	keys         []ebiten.Key
 	maxColors    int
 	numColors    int
@@ -172,7 +173,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// draw a png
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(0, 0)
-	screen.DrawImage(g.image, op)
+	screen.DrawImage(g.gemImages[0], op)
 
 }
 
@@ -238,13 +239,20 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return w, h
 }
 
-func loadImages(g *Game) {
-	// Decode the PNG image
-	image, _, err := ebitenutil.NewImageFromFile("Gem 1.png")
+func loadImage(path string) *ebiten.Image {
+	image, _, err := ebitenutil.NewImageFromFile(path)
 	if err != nil {
 		log.Fatalf("Error loading image: %v", err)
 	}
-	g.image = image
+	return image
+}
+
+func loadImages(g *Game) {
+	g.gemImages = make([]*ebiten.Image, g.numColors)
+	for i := range g.numColors {
+		image := loadImage("Gem " + strconv.Itoa(i+1) + ".png")
+		g.gemImages[i] = image
+	}
 }
 
 func newGame() *Game {
