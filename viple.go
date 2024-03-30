@@ -14,7 +14,7 @@ import (
 
 const (
 	blinkInverval = 60 / 2
-	cellSize      = 30
+	cellSize      = 50
 	dropDuration  = 60
 	margin        = 20
 	numRows       = 11
@@ -87,14 +87,19 @@ func main() {
 }
 
 func detectTriples(g *Game) {
+	// create a local mask to mark all square that are in triples
+	mask := make([][]bool, numRows)
+	for i := range mask {
+		mask[i] = make([]bool, numColumns)
+	}
+
 	found := false
 	// find all horizontal triples
 	for y, row := range g.grid[:len(g.grid)] {
 		for x := range g.grid[:len(row)-2] {
 			if g.grid[y][x].color >= 0 { // if is a color
 				if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
-					g.triplesMask[y][x], g.triplesMask[y][x+1], g.triplesMask[y][x+2] = true, true, true
-					g.grid[y][x].color, g.grid[y][x+1].color, g.grid[y][x+2].color = -1, -1, -1
+					mask[y][x], mask[y][x+1], mask[y][x+2] = true, true, true
 					found = true
 				}
 			}
@@ -106,16 +111,26 @@ func detectTriples(g *Game) {
 		for x := range g.grid[:len(row)] {
 			if g.grid[y][x].color >= 0 { // if is a color
 				if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
-					g.triplesMask[y][x], g.triplesMask[y+1][x], g.triplesMask[y+2][x] = true, true, true
-					g.grid[y][x].color, g.grid[y+1][x].color, g.grid[y+2][x].color = -1, -1, -1
+					mask[y][x], mask[y+1][x], mask[y+2][x] = true, true, true
 					found = true
 				}
 			}
 		}
 	}
+
 	if found {
-		fillEmpties(g)
+		// now that we have completed detecting all triples we can update the game state
+		for y, row := range g.grid {
+			for x := range row {
+				if mask[y][x] {
+					g.grid[y][x].color = -1
+					g.triplesMask[y][x] = true
+				}
+			}
+		}
 	}
+
+	fillEmpties(g)
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -237,7 +252,7 @@ func newGame() *Game {
 		g.triplesMask[i] = make([]bool, numColumns)
 	}
 
-	g.numColors = 6
+	g.numColors = 5
 	fillRandom(&g)
 
 	return &g
@@ -276,8 +291,8 @@ func SwapSquares(g *Game) bool {
 	fromSquare.color = toSquare.color
 	toSquare.color = temp
 
-	fromSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
-	toSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
+	toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
+	fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
 
 	g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 	return true
