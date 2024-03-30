@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"image/color"
+	_ "image/png"
 	"log"
 	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -62,6 +64,7 @@ type Game struct {
 	swapSquare   Point
 	frameCount   int
 	grid         [][]Square
+	image        *ebiten.Image
 	keys         []ebiten.Key
 	maxColors    int
 	numColors    int
@@ -165,6 +168,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 	vector.StrokeRect(screen, float32(cellSize*g.cursorSquare.x+margin), float32(cellSize*g.cursorSquare.y+margin),
 		cellSize, cellSize, cursorWidth, cursorColors[blink], false)
+
+	// draw a png
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(0, 0)
+	screen.DrawImage(g.image, op)
+
 }
 
 func fillEmpties(g *Game) {
@@ -229,6 +238,15 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return w, h
 }
 
+func loadImages(g *Game) {
+	// Decode the PNG image
+	image, _, err := ebitenutil.NewImageFromFile("Gem 1.png")
+	if err != nil {
+		log.Fatalf("Error loading image: %v", err)
+	}
+	g.image = image
+}
+
 func newGame() *Game {
 	g := Game{
 		maxColors:    5,
@@ -254,6 +272,8 @@ func newGame() *Game {
 
 	g.numColors = 5
 	fillRandom(&g)
+
+	loadImages(&g)
 
 	return &g
 }
