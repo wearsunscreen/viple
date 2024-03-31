@@ -6,6 +6,7 @@ import (
 	_ "image/png"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 
@@ -67,6 +68,7 @@ type Game struct {
 	frameCount   int
 	grid         [][]Square
 	gemImages    []*ebiten.Image
+	keyInput     string
 	keys         []ebiten.Key
 	maxColors    int
 	numColors    int
@@ -75,7 +77,9 @@ type Game struct {
 
 /* todo
 - quit with ":q", ":x", ":exit"
-- animation
+- audio
+- don't move if it doens't create a triple
+- win condition
 */
 
 func main() {
@@ -348,6 +352,19 @@ func (g *Game) Update() error {
 				if g.swapSquare.x == -1 {
 					// initiating a swap
 					g.swapSquare = g.cursorSquare
+				}
+			case ebiten.KeySemicolon:
+				if ebiten.IsKeyPressed(ebiten.KeyShift) {
+					g.keyInput = g.keyInput + ":"
+				}
+			case ebiten.KeyQ:
+				fallthrough
+			case ebiten.KeyX:
+				// quit on ":q", ":x"
+				g.keyInput = g.keyInput + k.String()
+				if g.keyInput[len(g.keyInput)-2:] == ":Q" ||
+					g.keyInput[len(g.keyInput)-2:] == ":X" {
+					os.Exit(0)
 				}
 			}
 			if g.swapSquare.x != -1 && g.swapSquare != g.cursorSquare {
