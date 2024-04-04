@@ -11,3 +11,4 @@ Copyright John Crane, 2024
 ## To Do
 * Level description
 * Multiple Levels
+* Scaler to animate gems
