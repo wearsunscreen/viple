@@ -58,8 +58,7 @@ var (
 	darkAluminium    = color.RGBA{0xba, 0xbd, 0xb6, 0xff}
 	darkCoal         = color.RGBA{0x2e, 0x34, 0x36, 0xff}
 
-	gameColors = [6]color.Color{darkButter, mediumGreen, darkChocolate, lightPlum, mediumSkyBlue, darkScarletRed}
-	rng        *rand.Rand
+	rng *rand.Rand
 )
 
 type Game struct {
@@ -72,11 +71,12 @@ type Game struct {
 	keys         []ebiten.Key
 	maxColors    int
 	numColors    int
+	player       *AudioPlayer
 	triplesMask  [][]bool
 }
 
 /* todo
-- quit with ":q", ":x", ":exit"
+- quit with ":quit", ":exit"
 - audio
 - don't move if it doens't create a triple
 - win condition
@@ -137,6 +137,7 @@ func detectTriples(g *Game) {
 				}
 			}
 		}
+		g.player, _ = PlaySound(tripleOgg)
 	}
 
 	fillEmpties(g)
@@ -362,9 +363,11 @@ func (g *Game) Update() error {
 			case ebiten.KeyX:
 				// quit on ":q", ":x"
 				g.keyInput = g.keyInput + k.String()
-				if g.keyInput[len(g.keyInput)-2:] == ":Q" ||
-					g.keyInput[len(g.keyInput)-2:] == ":X" {
-					os.Exit(0)
+				if len(g.keyInput) > 1 {
+					if g.keyInput[len(g.keyInput)-2:] == ":Q" ||
+						g.keyInput[len(g.keyInput)-2:] == ":X" {
+						os.Exit(0)
+					}
 				}
 			}
 			if g.swapSquare.x != -1 && g.swapSquare != g.cursorSquare {

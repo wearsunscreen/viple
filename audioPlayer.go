@@ -1,4 +1,4 @@
-// Player represents the current audio state.
+// AudioPlayer represents the current audio state.
 package main
 
 import (
@@ -10,20 +10,26 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
 )
 
+var (
+	sampleRate   = 48000
+	audioContext *audio.Context
+)
+
 //go:embed fail.ogg
 var failOgg []byte
 
 //go:embed triple.ogg
 var tripleOgg []byte
 
-type Player struct {
-	audioContext *audio.Context
-	audioPlayer  *audio.Player
-	seBytes      []byte
-	seCh         chan []byte
+type AudioPlayer struct {
+	audioPlayer *audio.AudioPlayer
 }
 
-func NewPlayer(audioContext *audio.Context, ogg []byte) (*Player, error) {
+func init() {
+	audioContext = audio.NewContext(sampleRate)
+}
+
+func PlaySound(ogg []byte) (*AudioPlayer, error) {
 	type audioStream interface {
 		io.ReadSeeker
 		Length() int64
@@ -38,10 +44,8 @@ func NewPlayer(audioContext *audio.Context, ogg []byte) (*Player, error) {
 	if err != nil {
 		return nil, err
 	}
-	player := &Player{
-		audioContext: audioContext,
-		audioPlayer:  p,
-		seCh:         make(chan []byte),
+	player := &AudioPlayer{
+		audioPlayer: p,
 	}
 
 	player.audioPlayer.Play()
@@ -49,16 +53,10 @@ func NewPlayer(audioContext *audio.Context, ogg []byte) (*Player, error) {
 	return player, nil
 }
 
-func (p *Player) Close() error {
+func (p *AudioPlayer) Close() error {
 	return p.audioPlayer.Close()
 }
 
-func (p *Player) update() error {
-	select {
-	case p.seBytes = <-p.seCh:
-		close(p.seCh)
-		p.seCh = nil
-	default:
-	}
+func (p *AudioPlayer) update() error {
 	return nil
 }
