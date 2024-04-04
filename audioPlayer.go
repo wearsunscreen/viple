@@ -18,6 +18,9 @@ var (
 //go:embed fail.ogg
 var failOgg []byte
 
+//go:embed win.ogg
+var winOgg []byte
+
 //go:embed triple.ogg
 var tripleOgg []byte
 

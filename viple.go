@@ -95,6 +95,17 @@ func main() {
 	}
 }
 
+func gameIsWon(g *Game) bool {
+	for y, row := range g.grid {
+		for x := range row {
+			if !g.triplesMask[y][x] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func detectTriples(g *Game) {
 	// create a local mask to mark all square that are in triples
 	mask := make([][]bool, numRows)
@@ -137,7 +148,11 @@ func detectTriples(g *Game) {
 				}
 			}
 		}
-		g.player, _ = PlaySound(tripleOgg)
+		if gameIsWon(g) {
+			g.player, _ = PlaySound(winOgg)
+		} else {
+			g.player, _ = PlaySound(tripleOgg)
+		}
 	}
 
 	fillEmpties(g)
