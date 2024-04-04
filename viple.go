@@ -28,6 +28,7 @@ const (
 	version       = "Viple 0.1"
 )
 
+// colors from the Tango Desktop Project
 var (
 	brightRed        = color.RGBA{0xfc, 0x10, 0x10, 0xff}
 	lightButter      = color.RGBA{0xfc, 0xe9, 0x4f, 0xff}
@@ -106,7 +107,7 @@ func gameIsWon(g *Game) bool {
 	return true
 }
 
-func detectTriples(g *Game) {
+func findTriples(grid [][]Square) (bool, [][]bool) {
 	// create a local mask to mark all square that are in triples
 	mask := make([][]bool, numRows)
 	for i := range mask {
@@ -115,10 +116,10 @@ func detectTriples(g *Game) {
 
 	found := false
 	// find all horizontal triples
-	for y, row := range g.grid[:len(g.grid)] {
-		for x := range g.grid[:len(row)-2] {
-			if g.grid[y][x].color >= 0 { // if is a color
-				if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
+	for y, row := range grid[:len(grid)] {
+		for x := range grid[:len(row)-2] {
+			if grid[y][x].color >= 0 { // if is a color
+				if grid[y][x].color == grid[y][x+1].color && grid[y][x].color == grid[y][x+2].color {
 					mask[y][x], mask[y][x+1], mask[y][x+2] = true, true, true
 					found = true
 				}
@@ -127,16 +128,21 @@ func detectTriples(g *Game) {
 	}
 
 	// find all vertical triples
-	for y, row := range g.grid[:len(g.grid)-2] {
-		for x := range g.grid[:len(row)] {
-			if g.grid[y][x].color >= 0 { // if is a color
-				if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
+	for y, row := range grid[:len(grid)-2] {
+		for x := range grid[:len(row)] {
+			if grid[y][x].color >= 0 { // if is a color
+				if grid[y][x].color == grid[y+1][x].color && grid[y][x].color == grid[y+2][x].color {
 					mask[y][x], mask[y+1][x], mask[y+2][x] = true, true, true
 					found = true
 				}
 			}
 		}
 	}
+	return found, mask
+}
+func updateTriples(g *Game) {
+
+	found, mask := findTriples(g.grid)
 
 	if found {
 		// now that we have completed detecting all triples we can update the game state
@@ -324,17 +330,33 @@ func SwapSquares(g *Game) bool {
 		return false
 	}
 
+	// swap colors
 	fromSquare := &g.grid[g.swapSquare.y][g.swapSquare.x]
 	toSquare := &g.grid[g.cursorSquare.y][g.cursorSquare.x]
-
 	temp := fromSquare.color
 	fromSquare.color = toSquare.color
 	toSquare.color = temp
 
-	toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
-	fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
+	// check if the swap will create a triple
+	makesATriple, _ := findTriples(g.grid)
 
-	g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
+	if makesATriple {
+		toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
+		fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
+
+		g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
+	} else {
+		// restore original colors
+		temp := fromSquare.color
+		fromSquare.color = toSquare.color
+		toSquare.color = temp
+		g.cursorSquare = g.swapSquare // return the cursor to the original location
+		g.swapSquare = Point{-1, -1}  // indicate we are no longer attempting to swap
+
+		// tell the user he made an invalid move
+		PlaySound(failOgg)
+		return false
+	}
 	return true
 }
 
@@ -346,7 +368,7 @@ func (g *Game) Update() error {
 			if g.grid[y][x].mover != nil {
 				if g.grid[y][x].mover.endFrame < g.frameCount {
 					g.grid[y][x].mover = nil
-					detectTriples(g)
+					updateTriples(g)
 				}
 			}
 		}
