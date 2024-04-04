@@ -1,23 +1,31 @@
 package main
 
 import (
+	"flag"
 	"image/color"
+	_ "image/png"
 	"log"
 	"math/rand"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
-	version       = "Viple 0.1"
+	blinkInverval = 60 / 2
+	cellSize      = 50
+	dropDuration  = 60
+	gemScale      = float64(cellSize-4) / float64(gemWidth)
+	gemWidth      = 100
 	margin        = 20
-	cellSize      = 30
 	numRows       = 11
 	numColumns    = 5
-	blinkInverval = 60 / 2
+	swapDuration  = 40
+	version       = "Viple 0.1"
 )
 
 var (
@@ -50,8 +58,7 @@ var (
 	darkAluminium    = color.RGBA{0xba, 0xbd, 0xb6, 0xff}
 	darkCoal         = color.RGBA{0x2e, 0x34, 0x36, 0xff}
 
-	gameColors = [6]color.Color{darkButter, mediumGreen, darkChocolate, lightPlum, mediumSkyBlue, darkScarletRed}
-	rng        *rand.Rand
+	rng *rand.Rand
 )
 
 type Game struct {
@@ -59,17 +66,28 @@ type Game struct {
 	swapSquare   Point
 	frameCount   int
 	grid         [][]Square
+	gemImages    []*ebiten.Image
+	keyInput     string
 	keys         []ebiten.Key
 	maxColors    int
+	numColors    int
+	player       *AudioPlayer
 	triplesMask  [][]bool
 }
 
 /* todo
-- quit with ":q", ":x", ":exit"
-- animation
+- quit with ":quit", ":exit"
+- audio
+- don't move if it doens't create a triple
+- win condition
 */
 
 func main() {
+	var seed int
+	flag.IntVar(&seed, "seed", 0, "Seed for random number generation")
+	flag.Parse()
+	seedRNG(int64(seed))
+
 	ebiten.SetWindowSize(gameDimensions())
 	ebiten.SetWindowTitle("Hello, World!")
 	if err := ebiten.RunGame(newGame()); err != nil {
@@ -77,18 +95,33 @@ func main() {
 	}
 }
 
-func init() {
-	//source := rand.NewSource(3) // seeding the random number generator can be useful in debugging
-	source := rand.NewSource(time.Now().UnixNano())
-	rng = rand.New(source)
+func gameIsWon(g *Game) bool {
+	for y, row := range g.grid {
+		for x := range row {
+			if !g.triplesMask[y][x] {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func detectTriples(g *Game) {
+	// create a local mask to mark all square that are in triples
+	mask := make([][]bool, numRows)
+	for i := range mask {
+		mask[i] = make([]bool, numColumns)
+	}
+
+	found := false
 	// find all horizontal triples
 	for y, row := range g.grid[:len(g.grid)] {
 		for x := range g.grid[:len(row)-2] {
-			if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
-				g.triplesMask[y][x], g.triplesMask[y][x+1], g.triplesMask[y][x+2] = true, true, true
+			if g.grid[y][x].color >= 0 { // if is a color
+				if g.grid[y][x].color == g.grid[y][x+1].color && g.grid[y][x].color == g.grid[y][x+2].color {
+					mask[y][x], mask[y][x+1], mask[y][x+2] = true, true, true
+					found = true
+				}
 			}
 		}
 	}
@@ -96,33 +129,44 @@ func detectTriples(g *Game) {
 	// find all vertical triples
 	for y, row := range g.grid[:len(g.grid)-2] {
 		for x := range g.grid[:len(row)] {
-			if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
-				g.triplesMask[y][x], g.triplesMask[y+1][x], g.triplesMask[y+2][x] = true, true, true
+			if g.grid[y][x].color >= 0 { // if is a color
+				if g.grid[y][x].color == g.grid[y+1][x].color && g.grid[y][x].color == g.grid[y+2][x].color {
+					mask[y][x], mask[y+1][x], mask[y+2][x] = true, true, true
+					found = true
+				}
 			}
 		}
 	}
+
+	if found {
+		// now that we have completed detecting all triples we can update the game state
+		for y, row := range g.grid {
+			for x := range row {
+				if mask[y][x] {
+					g.grid[y][x].color = -1
+					g.triplesMask[y][x] = true
+				}
+			}
+		}
+		if gameIsWon(g) {
+			g.player, _ = PlaySound(winOgg)
+		} else {
+			g.player, _ = PlaySound(tripleOgg)
+		}
+	}
+
+	fillEmpties(g)
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(mediumCoal)
-	//ebitenutil.DebugPrint(screen, version)
 
-	// find triples
-	detectTriples(g)
-
-	// draw cells
-	for y, row := range g.grid {
-		for x, _ := range row {
-			g.grid[y][x].Draw(screen, g.frameCount)
-		}
-	}
-
-	// draw outlines of triples
+	// draw background of triples
 	for y, row := range g.grid {
 		for x := range row {
 			if g.triplesMask[y][x] {
-				vector.StrokeRect(screen, float32(cellSize*x+margin), float32(cellSize*y+margin), cellSize, cellSize, 4, lightGreen, false)
+				g.grid[y][x].DrawBackground(screen, darkButter)
 			}
 		}
 	}
@@ -130,23 +174,72 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// draw cursor
 	cursorColors := [2]color.Color{color.White, color.Black}
 	blink := g.frameCount / blinkInverval % 2
-	var cursorWidth float32 = 4
 	if g.swapSquare.x != -1 {
 		// we are in swap mode, faster blink, brighter colors
 		blink = g.frameCount / (blinkInverval / 2) % 2
 		cursorColors = [2]color.Color{brightRed, lightButter}
-		cursorWidth = 6
 	}
-	vector.StrokeRect(screen, float32(cellSize*g.cursorSquare.x+margin), float32(cellSize*g.cursorSquare.y+margin),
-		cellSize, cellSize, cursorWidth, cursorColors[blink], false)
-}
+	g.grid[g.cursorSquare.y][g.cursorSquare.x].DrawBackground(screen, cursorColors[blink])
 
-func fillRandom(g *Game, upTo int) {
+	// draw gems
 	for y, row := range g.grid {
-		for x := range row {
-			g.grid[y][x].color = rng.Intn(upTo)
+		for x, _ := range row {
+			g.grid[y][x].DrawGem(screen, g.gemImages[g.grid[y][x].color], g.frameCount)
 		}
 	}
+}
+
+func fillEmpties(g *Game) {
+	// find empty square and move squares from above down to fill
+	for x := range numColumns {
+		for y := range numRows {
+			y = numRows - 1 - y // work from bottom up
+			if g.grid[y][x].color == -1 {
+				above := findSquareAbove(g, Point{x, y})
+				if above.y >= 0 {
+					g.grid[y][x].color = g.grid[above.y][above.x].color
+					g.grid[above.y][above.x].color = -1
+					g.grid[y][x].AddMover(g.frameCount, dropDuration,
+						g.grid[above.y][above.x].point,
+						g.grid[y][x].point)
+				}
+			}
+		}
+	}
+
+	// fill empties at the top of the grid with newly generated colors
+	for x := range numColumns {
+		for y := range numRows {
+			if g.grid[y][x].color == -1 {
+				g.grid[y][x].color = rng.Intn(g.numColors)
+
+				// there's a bit of a kludge here. The call to offsetPoint should be equal to the height
+				// of the stack squares being removed, but don't calculate that height and just pass
+				// cellsize * -1.
+				g.grid[y][x].AddMover(g.frameCount, dropDuration,
+					offsetPoint(g.grid[y][x].point, Point{0, cellSize * -1}),
+					g.grid[y][x].point)
+			}
+		}
+	}
+}
+
+func fillRandom(g *Game) {
+	for y, row := range g.grid {
+		for x := range row {
+			g.grid[y][x].color = rng.Intn(g.numColors)
+		}
+	}
+}
+
+func findSquareAbove(g *Game, p Point) Point {
+	for y := range p.y {
+		y = p.y - 1 - y
+		for g.grid[y][p.x].color != -1 {
+			return Point{p.x, y}
+		}
+	}
+	return Point{-1, -1} // did not find a square with color
 }
 
 func gameDimensions() (width int, height int) {
@@ -156,6 +249,22 @@ func gameDimensions() (width int, height int) {
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	w, h := gameDimensions()
 	return w, h
+}
+
+func loadImage(path string) *ebiten.Image {
+	image, _, err := ebitenutil.NewImageFromFile(path)
+	if err != nil {
+		log.Fatalf("Error loading image: %v", err)
+	}
+	return image
+}
+
+func loadImages(g *Game) {
+	g.gemImages = make([]*ebiten.Image, g.numColors)
+	for i := range g.numColors {
+		image := loadImage("Gem " + strconv.Itoa(i+1) + ".png")
+		g.gemImages[i] = image
+	}
 }
 
 func newGame() *Game {
@@ -181,8 +290,24 @@ func newGame() *Game {
 		g.triplesMask[i] = make([]bool, numColumns)
 	}
 
-	fillRandom(&g, 6)
+	g.numColors = 5
+	fillRandom(&g)
+
+	loadImages(&g)
+
 	return &g
+}
+
+func offsetPoint(p, offset Point) Point {
+	return Point{p.x + offset.x, p.y + offset.y}
+}
+
+func seedRNG(seed int64) {
+	if seed == 0 {
+		seed = time.Now().UnixNano() % 10000
+	}
+	log.Println("Random seed is ", seed)
+	rng = rand.New(rand.NewSource(seed))
 }
 
 // Exchange positions of two neighboring squares, return false if unable to exchange.
@@ -206,8 +331,8 @@ func SwapSquares(g *Game) bool {
 	fromSquare.color = toSquare.color
 	toSquare.color = temp
 
-	fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
 	toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
+	fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
 
 	g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 	return true
@@ -221,6 +346,7 @@ func (g *Game) Update() error {
 			if g.grid[y][x].mover != nil {
 				if g.grid[y][x].mover.endFrame < g.frameCount {
 					g.grid[y][x].mover = nil
+					detectTriples(g)
 				}
 			}
 		}
@@ -242,6 +368,21 @@ func (g *Game) Update() error {
 				if g.swapSquare.x == -1 {
 					// initiating a swap
 					g.swapSquare = g.cursorSquare
+				}
+			case ebiten.KeySemicolon:
+				if ebiten.IsKeyPressed(ebiten.KeyShift) {
+					g.keyInput = g.keyInput + ":"
+				}
+			case ebiten.KeyQ:
+				fallthrough
+			case ebiten.KeyX:
+				// quit on ":q", ":x"
+				g.keyInput = g.keyInput + k.String()
+				if len(g.keyInput) > 1 {
+					if g.keyInput[len(g.keyInput)-2:] == ":Q" ||
+						g.keyInput[len(g.keyInput)-2:] == ":X" {
+						os.Exit(0)
+					}
 				}
 			}
 			if g.swapSquare.x != -1 && g.swapSquare != g.cursorSquare {
