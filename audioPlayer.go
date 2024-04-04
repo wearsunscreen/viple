@@ -22,7 +22,7 @@ var failOgg []byte
 var tripleOgg []byte
 
 type AudioPlayer struct {
-	audioPlayer *audio.AudioPlayer
+	audioPlayer *audio.Player
 }
 
 func init() {
