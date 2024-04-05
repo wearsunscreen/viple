@@ -15,13 +15,13 @@ var (
 	audioContext *audio.Context
 )
 
-//go:embed fail.ogg
+//go:embed resources/fail.ogg
 var failOgg []byte
 
-//go:embed win.ogg
+//go:embed resources/win.ogg
 var winOgg []byte
 
-//go:embed triple.ogg
+//go:embed resources/triple.ogg
 var tripleOgg []byte
 
 type AudioPlayer struct {
