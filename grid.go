@@ -20,7 +20,7 @@ func DrawGrid(screen *ebiten.Image, g *Game) {
 	// draw cursor
 	cursorColors := [2]color.Color{color.White, color.Black}
 	blink := g.frameCount / blinkInverval % 2
-	if g.swapSquare.x != -1 {
+	if g.mode == InsertMode {
 		// we are in swap mode, faster blink, brighter colors
 		blink = g.frameCount / (blinkInverval / 2) % 2
 		cursorColors = [2]color.Color{brightRed, lightButter}

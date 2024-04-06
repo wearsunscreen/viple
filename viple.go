@@ -27,6 +27,14 @@ const (
 	version       = "Viple 0.1"
 )
 
+type Mode int
+
+const (
+	CommandMode = iota
+	LineMode
+	InsertMode
+)
+
 var (
 	rng *rand.Rand
 )
@@ -40,6 +48,7 @@ type Game struct {
 	keyInput     string
 	keys         []ebiten.Key
 	maxColors    int
+	mode         Mode
 	numColors    int
 	player       *AudioPlayer
 	triplesMask  [][]bool
@@ -115,6 +124,7 @@ func newGame() *Game {
 	}
 
 	g.numColors = 5
+	g.mode = CommandMode
 	fillRandom(&g)
 
 	loadImages(&g)
@@ -140,11 +150,9 @@ func seedRNG(seed int64) {
 // same value.
 func SwapSquares(g *Game) bool {
 	if g.swapSquare == g.cursorSquare {
-		g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 		return false
 	}
 	if g.grid[g.swapSquare.y][g.swapSquare.x].point == g.grid[g.cursorSquare.y][g.cursorSquare.x].point {
-		g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 		return false
 	}
 
@@ -161,20 +169,74 @@ func SwapSquares(g *Game) bool {
 	if makesATriple {
 		toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
 		fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
-
-		g.swapSquare = Point{-1, -1} // indicates we are no longer attempting to swap
 	} else {
 		// restore original colors
 		temp := fromSquare.color
 		fromSquare.color = toSquare.color
 		toSquare.color = temp
-		g.cursorSquare = g.swapSquare // return the cursor to the original location
-		g.swapSquare = Point{-1, -1}  // indicate we are no longer attempting to swap
+		g.swapSquare = g.cursorSquare // return the cursor to the original location
 
 		// tell the user he made an invalid move
 		return false
 	}
 	return true
+}
+
+func handleKeyCommand(g *Game, key ebiten.Key) {
+	switch key {
+	case ebiten.KeyH:
+		g.cursorSquare.x = max(g.cursorSquare.x-1, 0)
+	case ebiten.KeyL:
+		g.cursorSquare.x = min(g.cursorSquare.x+1, numColumns-1)
+	case ebiten.KeyK:
+		g.cursorSquare.y = max(g.cursorSquare.y-1, 0)
+	case ebiten.KeyJ:
+		g.cursorSquare.y = min(g.cursorSquare.y+1, numRows-1)
+	case ebiten.KeyI:
+		// entering InsertMode (where we do swaps)
+		g.swapSquare = g.cursorSquare
+		g.mode = InsertMode
+	case ebiten.KeySemicolon:
+		if ebiten.IsKeyPressed(ebiten.KeyShift) {
+			g.keyInput = g.keyInput + ":"
+		}
+	case ebiten.KeyQ:
+		fallthrough
+	case ebiten.KeyX:
+		// quit on ":q", ":x"
+		g.keyInput = g.keyInput + key.String()
+		if len(g.keyInput) > 1 {
+			if g.keyInput[len(g.keyInput)-2:] == ":Q" ||
+				g.keyInput[len(g.keyInput)-2:] == ":X" {
+				os.Exit(0)
+			}
+		}
+	}
+}
+
+func handleKeyInsert(g *Game, key ebiten.Key) {
+	switch key {
+	case ebiten.KeyH:
+		g.swapSquare.x = max(g.swapSquare.x-1, 0)
+	case ebiten.KeyL:
+		g.swapSquare.x = min(g.swapSquare.x+1, numColumns-1)
+	case ebiten.KeyK:
+		g.swapSquare.y = max(g.swapSquare.y-1, 0)
+	case ebiten.KeyJ:
+		g.swapSquare.y = min(g.swapSquare.y+1, numRows-1)
+	case ebiten.KeyI:
+		PlaySound(failOgg)
+	case ebiten.KeyEscape:
+		g.mode = CommandMode
+		g.swapSquare = Point{-1, -1}
+	}
+	if g.swapSquare.x != -1 && g.swapSquare != g.cursorSquare {
+		if result := SwapSquares(g); !result {
+			PlaySound(failOgg)
+		}
+		g.cursorSquare = g.swapSquare
+	}
+
 }
 
 func (g *Game) Update() error {
@@ -192,42 +254,13 @@ func (g *Game) Update() error {
 	}
 
 	g.keys = inpututil.AppendPressedKeys(g.keys[:0])
-	for _, k := range g.keys {
-		if inpututil.IsKeyJustPressed(k) {
-			switch k {
-			case ebiten.KeyH:
-				g.cursorSquare.x = max(g.cursorSquare.x-1, 0)
-			case ebiten.KeyL:
-				g.cursorSquare.x = min(g.cursorSquare.x+1, numColumns-1)
-			case ebiten.KeyK:
-				g.cursorSquare.y = max(g.cursorSquare.y-1, 0)
-			case ebiten.KeyJ:
-				g.cursorSquare.y = min(g.cursorSquare.y+1, numRows-1)
-			case ebiten.KeyV:
-				if g.swapSquare.x == -1 {
-					// initiating a swap
-					g.swapSquare = g.cursorSquare
-				}
-			case ebiten.KeySemicolon:
-				if ebiten.IsKeyPressed(ebiten.KeyShift) {
-					g.keyInput = g.keyInput + ":"
-				}
-			case ebiten.KeyQ:
-				fallthrough
-			case ebiten.KeyX:
-				// quit on ":q", ":x"
-				g.keyInput = g.keyInput + k.String()
-				if len(g.keyInput) > 1 {
-					if g.keyInput[len(g.keyInput)-2:] == ":Q" ||
-						g.keyInput[len(g.keyInput)-2:] == ":X" {
-						os.Exit(0)
-					}
-				}
-			}
-			if g.swapSquare.x != -1 && g.swapSquare != g.cursorSquare {
-				if result := SwapSquares(g); !result {
-					PlaySound(failOgg)
-				}
+	for _, key := range g.keys {
+		if inpututil.IsKeyJustPressed(key) {
+			switch g.mode {
+			case CommandMode:
+				handleKeyCommand(g, key)
+			case InsertMode:
+				handleKeyInsert(g, key)
 			}
 		}
 	}
