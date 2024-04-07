@@ -16,13 +16,15 @@ import (
 
 const (
 	blinkInverval = 60 / 2
-	cellSize      = 50
+	gemCellSize   = 50
 	dropDuration  = 60
-	gemScale      = float64(cellSize-4) / float64(gemWidth)
+	gemScale      = float64(gemCellSize-4) / float64(gemWidth)
 	gemWidth      = 100
-	margin        = 20
-	numRows       = 11
+	gemsMargin    = 20
+	gemRows       = 11
 	numColumns    = 5
+	screenWidth   = 800
+	screenHeight  = 600
 	swapDuration  = 40
 	version       = "Viple 0.1"
 )
@@ -39,19 +41,22 @@ var (
 	rng *rand.Rand
 )
 
+type Level3 struct {
+	cursorGem   Point
+	gemGrid     [][]Square
+	gemImages   []*ebiten.Image
+	mode        Mode
+	numGems     int
+	swapGem     Point
+	triplesMask [][]bool
+}
+
 type Game struct {
-	cursorSquare Point
-	swapSquare   Point
-	frameCount   int
-	grid         [][]Square
-	gemImages    []*ebiten.Image
-	keyInput     string
-	keys         []ebiten.Key
-	maxColors    int
-	mode         Mode
-	numColors    int
-	player       *AudioPlayer
-	triplesMask  [][]bool
+	frameCount int
+	keyInput   string
+	keys       []ebiten.Key
+	player     *AudioPlayer
+	l3         Level3
 }
 
 func main() {
@@ -76,7 +81,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func gameDimensions() (width int, height int) {
-	return (margin * 2) + (numColumns * cellSize), (margin * 2) + (numRows * cellSize)
+	return screenWidth, screenHeight
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -93,38 +98,37 @@ func loadImage(path string) *ebiten.Image {
 }
 
 func loadImages(g *Game) {
-	g.gemImages = make([]*ebiten.Image, g.numColors)
-	for i := range g.numColors {
+	g.l3.gemImages = make([]*ebiten.Image, g.l3.numGems)
+	for i := range g.l3.numGems {
 		image := loadImage("resources/Gem " + strconv.Itoa(i+1) + ".png")
-		g.gemImages[i] = image
+		g.l3.gemImages[i] = image
 	}
 }
 
 func newGame() *Game {
-	g := Game{
-		maxColors:    5,
-		cursorSquare: Point{numColumns / 2, numRows / 2},
-		swapSquare:   Point{-1, -1},
+	g := Game{}
+
+	g.l3.numGems = 5
+	g.l3.cursorGem = Point{numColumns / 2, gemRows / 2}
+	g.l3.swapGem = Point{-1, -1}
+	g.l3.gemGrid = make([][]Square, gemRows)
+	for y := range g.l3.gemGrid {
+		g.l3.gemGrid[y] = make([]Square, numColumns)
 	}
 
-	g.grid = make([][]Square, numRows)
-	for y := range g.grid {
-		g.grid[y] = make([]Square, numColumns)
-	}
-
-	for y, row := range g.grid {
+	for y, row := range g.l3.gemGrid {
 		for x, _ := range row {
-			g.grid[y][x].point = Point{x, y}
+			g.l3.gemGrid[y][x].point = Point{x, y}
 		}
 	}
 
-	g.triplesMask = make([][]bool, numRows)
-	for i := range g.triplesMask {
-		g.triplesMask[i] = make([]bool, numColumns)
+	g.l3.triplesMask = make([][]bool, gemRows)
+	for i := range g.l3.triplesMask {
+		g.l3.triplesMask[i] = make([]bool, numColumns)
 	}
 
-	g.numColors = 5
-	g.mode = CommandMode
+	g.l3.numGems = 5
+	g.l3.mode = CommandMode
 	fillRandom(&g)
 
 	loadImages(&g)
@@ -146,25 +150,25 @@ func seedRNG(seed int64) {
 
 // Exchange positions of two neighboring squares, return false if unable to exchange.
 // The exchange fails if swap point and cursor point are the same (this can happen when
-// player attempts to move off the grid). The exchange fails if both points have the
+// player attempts to move off the gemGrid). The exchange fails if both points have the
 // same value.
 func SwapSquares(g *Game) bool {
-	if g.swapSquare == g.cursorSquare {
+	if g.l3.swapGem == g.l3.cursorGem {
 		return false
 	}
-	if g.grid[g.swapSquare.y][g.swapSquare.x].point == g.grid[g.cursorSquare.y][g.cursorSquare.x].point {
+	if g.l3.gemGrid[g.l3.swapGem.y][g.l3.swapGem.x].point == g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x].point {
 		return false
 	}
 
 	// swap colors
-	fromSquare := &g.grid[g.swapSquare.y][g.swapSquare.x]
-	toSquare := &g.grid[g.cursorSquare.y][g.cursorSquare.x]
+	fromSquare := &g.l3.gemGrid[g.l3.swapGem.y][g.l3.swapGem.x]
+	toSquare := &g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x]
 	temp := fromSquare.color
 	fromSquare.color = toSquare.color
 	toSquare.color = temp
 
 	// check if the swap will create a triple
-	makesATriple, _ := FindTriples(g.grid)
+	makesATriple, _ := FindTriples(g.l3.gemGrid)
 
 	if makesATriple {
 		toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
@@ -174,7 +178,7 @@ func SwapSquares(g *Game) bool {
 		temp := fromSquare.color
 		fromSquare.color = toSquare.color
 		toSquare.color = temp
-		g.swapSquare = g.cursorSquare // return the cursor to the original location
+		g.l3.swapGem = g.l3.cursorGem // return the cursor to the original location
 
 		// tell the user he made an invalid move
 		return false
@@ -185,17 +189,17 @@ func SwapSquares(g *Game) bool {
 func handleKeyCommand(g *Game, key ebiten.Key) {
 	switch key {
 	case ebiten.KeyH:
-		g.cursorSquare.x = max(g.cursorSquare.x-1, 0)
+		g.l3.cursorGem.x = max(g.l3.cursorGem.x-1, 0)
 	case ebiten.KeyL:
-		g.cursorSquare.x = min(g.cursorSquare.x+1, numColumns-1)
+		g.l3.cursorGem.x = min(g.l3.cursorGem.x+1, numColumns-1)
 	case ebiten.KeyK:
-		g.cursorSquare.y = max(g.cursorSquare.y-1, 0)
+		g.l3.cursorGem.y = max(g.l3.cursorGem.y-1, 0)
 	case ebiten.KeyJ:
-		g.cursorSquare.y = min(g.cursorSquare.y+1, numRows-1)
+		g.l3.cursorGem.y = min(g.l3.cursorGem.y+1, gemRows-1)
 	case ebiten.KeyI:
 		// entering InsertMode (where we do swaps)
-		g.swapSquare = g.cursorSquare
-		g.mode = InsertMode
+		g.l3.swapGem = g.l3.cursorGem
+		g.l3.mode = InsertMode
 	case ebiten.KeySemicolon:
 		if ebiten.IsKeyPressed(ebiten.KeyShift) {
 			g.keyInput = g.keyInput + ":"
@@ -217,24 +221,24 @@ func handleKeyCommand(g *Game, key ebiten.Key) {
 func handleKeyInsert(g *Game, key ebiten.Key) {
 	switch key {
 	case ebiten.KeyH:
-		g.swapSquare.x = max(g.swapSquare.x-1, 0)
+		g.l3.swapGem.x = max(g.l3.swapGem.x-1, 0)
 	case ebiten.KeyL:
-		g.swapSquare.x = min(g.swapSquare.x+1, numColumns-1)
+		g.l3.swapGem.x = min(g.l3.swapGem.x+1, numColumns-1)
 	case ebiten.KeyK:
-		g.swapSquare.y = max(g.swapSquare.y-1, 0)
+		g.l3.swapGem.y = max(g.l3.swapGem.y-1, 0)
 	case ebiten.KeyJ:
-		g.swapSquare.y = min(g.swapSquare.y+1, numRows-1)
+		g.l3.swapGem.y = min(g.l3.swapGem.y+1, gemRows-1)
 	case ebiten.KeyI:
 		PlaySound(failOgg)
 	case ebiten.KeyEscape:
-		g.mode = CommandMode
-		g.swapSquare = Point{-1, -1}
+		g.l3.mode = CommandMode
+		g.l3.swapGem = Point{-1, -1}
 	}
-	if g.swapSquare.x != -1 && g.swapSquare != g.cursorSquare {
+	if g.l3.swapGem.x != -1 && g.l3.swapGem != g.l3.cursorGem {
 		if result := SwapSquares(g); !result {
 			PlaySound(failOgg)
 		}
-		g.cursorSquare = g.swapSquare
+		g.l3.cursorGem = g.l3.swapGem
 	}
 
 }
@@ -242,11 +246,11 @@ func handleKeyInsert(g *Game, key ebiten.Key) {
 func (g *Game) Update() error {
 	g.frameCount++
 	// clear movers if expired
-	for y, row := range g.grid {
+	for y, row := range g.l3.gemGrid {
 		for x, _ := range row {
-			if g.grid[y][x].mover != nil {
-				if g.grid[y][x].mover.endFrame < g.frameCount {
-					g.grid[y][x].mover = nil
+			if g.l3.gemGrid[y][x].mover != nil {
+				if g.l3.gemGrid[y][x].mover.endFrame < g.frameCount {
+					g.l3.gemGrid[y][x].mover = nil
 					UpdateTriples(g)
 				}
 			}
@@ -256,7 +260,7 @@ func (g *Game) Update() error {
 	g.keys = inpututil.AppendPressedKeys(g.keys[:0])
 	for _, key := range g.keys {
 		if inpututil.IsKeyJustPressed(key) {
-			switch g.mode {
+			switch g.l3.mode {
 			case CommandMode:
 				handleKeyCommand(g, key)
 			case InsertMode:
