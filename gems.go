@@ -101,7 +101,7 @@ func drawGrid(screen *ebiten.Image, g *Game) {
 
 	// draw gems
 	for y, row := range g.l3.gemGrid {
-		for x, _ := range row {
+		for x := range row {
 			g.l3.gemGrid[y][x].drawGem(screen, g.l3.gemImages[g.l3.gemGrid[y][x].color], g.frameCount)
 		}
 	}
@@ -116,7 +116,7 @@ func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 
 	found := false
 	// find all horizontal triples
-	for y, row := range gemGrid[:len(gemGrid)] {
+	for y, row := range gemGrid[:] {
 		for x := range gemGrid[:len(row)-2] {
 			if gemGrid[y][x].color >= 0 { // if is a color
 				if gemGrid[y][x].color == gemGrid[y][x+1].color && gemGrid[y][x].color == gemGrid[y][x+2].color {
@@ -212,7 +212,7 @@ func initLevel3(g *Game) {
 	}
 
 	for y, row := range g.l3.gemGrid {
-		for x, _ := range row {
+		for x := range row {
 			g.l3.gemGrid[y][x].point = Point{x, y}
 		}
 	}
@@ -258,7 +258,7 @@ func squareToScreenPoint(squareXY Point) Point {
 func updateLevel3(g *Game) error {
 	// clear movers if expired
 	for y, row := range g.l3.gemGrid {
-		for x, _ := range row {
+		for x := range row {
 			if g.l3.gemGrid[y][x].mover != nil {
 				if g.l3.gemGrid[y][x].mover.endFrame < g.frameCount {
 					g.l3.gemGrid[y][x].mover = nil
