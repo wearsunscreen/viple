@@ -2,17 +2,90 @@ package main
 
 import (
 	"image/color"
+	"os"
+	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-func DrawGrid(screen *ebiten.Image, g *Game) {
+const (
+	blinkInverval = 60 / 2
+	gemCellSize   = 50
+	dropDuration  = 60
+	gemScale      = float64(gemCellSize-4) / float64(gemWidth)
+	gemWidth      = 100
+	gemsMargin    = 20
+	gemRows       = 11
+	gemColumns    = 5
+	swapDuration  = 40
+)
+
+type Level3 struct {
+	cursorGem   Point
+	gemGrid     [][]Square
+	gemImages   []*ebiten.Image
+	mode        Mode
+	numGems     int
+	swapGem     Point
+	triplesMask [][]bool
+}
+
+type Square struct {
+	color int
+	mover *Mover
+	point Point
+	z     int
+}
+
+func (square *Square) AddMover(startFrame int, duration int, from Point, to Point) {
+	// add animation
+	mover := new(Mover)
+
+	mover.startFrame = startFrame
+	mover.endFrame = startFrame + duration
+	mover.startPoint = from
+	mover.endPoint = to
+
+	square.mover = mover
+}
+
+func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
+	completionRatio := 1 - float64(mover.endFrame-frameCount)/float64(mover.endFrame-mover.startFrame)
+	startPosition := squareToScreenPoint(mover.startPoint)
+	endPosition := squareToScreenPoint(mover.endPoint)
+	op.GeoM.Translate(
+		float64(startPosition.x)+(completionRatio*float64(endPosition.x-startPosition.x)),
+		float64(startPosition.y)+(completionRatio*float64(endPosition.y-startPosition.y)))
+}
+
+func (square *Square) drawBackground(screen *ebiten.Image, color color.Color) {
+	pos := squareToScreenPoint(square.point)
+	vector.DrawFilledRect(screen, float32(pos.x), float32(pos.y), gemCellSize-4, gemCellSize-4, color, false)
+}
+
+func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, frameCount int) {
+	if square.color >= 0 {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(gemScale, gemScale)
+		if square.mover != nil {
+			applyMover(square.mover, op, frameCount)
+		} else {
+			pos := squareToScreenPoint(square.point)
+			op.GeoM.Translate(float64(pos.x), float64(pos.y))
+		}
+		screen.DrawImage(gemImage, op)
+	}
+}
+
+func drawGrid(screen *ebiten.Image, g *Game) {
 
 	// draw background of triples
 	for y, row := range g.l3.gemGrid {
 		for x := range row {
 			if g.l3.triplesMask[y][x] {
-				g.l3.gemGrid[y][x].DrawBackground(screen, darkButter)
+				g.l3.gemGrid[y][x].drawBackground(screen, darkButter)
 			}
 		}
 	}
@@ -25,21 +98,21 @@ func DrawGrid(screen *ebiten.Image, g *Game) {
 		blink = g.frameCount / (blinkInverval / 2) % 2
 		cursorColors = [2]color.Color{brightRed, lightButter}
 	}
-	g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x].DrawBackground(screen, cursorColors[blink])
+	g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x].drawBackground(screen, cursorColors[blink])
 
 	// draw gems
 	for y, row := range g.l3.gemGrid {
 		for x, _ := range row {
-			g.l3.gemGrid[y][x].DrawGem(screen, g.l3.gemImages[g.l3.gemGrid[y][x].color], g.frameCount)
+			g.l3.gemGrid[y][x].drawGem(screen, g.l3.gemImages[g.l3.gemGrid[y][x].color], g.frameCount)
 		}
 	}
 }
 
-func FindTriples(gemGrid [][]Square) (bool, [][]bool) {
+func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	// create a local mask to mark all square that are in triples
 	mask := make([][]bool, gemRows)
 	for i := range mask {
-		mask[i] = make([]bool, numColumns)
+		mask[i] = make([]bool, gemColumns)
 	}
 
 	found := false
@@ -69,8 +142,143 @@ func FindTriples(gemGrid [][]Square) (bool, [][]bool) {
 	return found, mask
 }
 
-func UpdateTriples(g *Game) {
-	found, mask := FindTriples(g.l3.gemGrid)
+func (square *Square) GetZ() int {
+	return square.z
+}
+
+func handleKeyCommand(g *Game, key ebiten.Key) {
+	switch key {
+	case ebiten.KeyH:
+		g.l3.cursorGem.x = max(g.l3.cursorGem.x-1, 0)
+	case ebiten.KeyL:
+		g.l3.cursorGem.x = min(g.l3.cursorGem.x+1, gemColumns-1)
+	case ebiten.KeyK:
+		g.l3.cursorGem.y = max(g.l3.cursorGem.y-1, 0)
+	case ebiten.KeyJ:
+		g.l3.cursorGem.y = min(g.l3.cursorGem.y+1, gemRows-1)
+	case ebiten.KeyI:
+		// entering InsertMode (where we do swaps)
+		g.l3.swapGem = g.l3.cursorGem
+		g.l3.mode = InsertMode
+	case ebiten.KeySemicolon:
+		if ebiten.IsKeyPressed(ebiten.KeyShift) {
+			g.keyInput = g.keyInput + ":"
+		}
+	case ebiten.KeyQ:
+		fallthrough
+	case ebiten.KeyX:
+		// quit on ":q", ":x"
+		g.keyInput = g.keyInput + key.String()
+		if len(g.keyInput) > 1 {
+			if g.keyInput[len(g.keyInput)-2:] == ":Q" ||
+				g.keyInput[len(g.keyInput)-2:] == ":X" {
+				os.Exit(0)
+			}
+		}
+	}
+}
+
+func handleKeyInsert(g *Game, key ebiten.Key) {
+	switch key {
+	case ebiten.KeyH:
+		g.l3.swapGem.x = max(g.l3.swapGem.x-1, 0)
+	case ebiten.KeyL:
+		g.l3.swapGem.x = min(g.l3.swapGem.x+1, gemColumns-1)
+	case ebiten.KeyK:
+		g.l3.swapGem.y = max(g.l3.swapGem.y-1, 0)
+	case ebiten.KeyJ:
+		g.l3.swapGem.y = min(g.l3.swapGem.y+1, gemRows-1)
+	case ebiten.KeyI:
+		PlaySound(failOgg)
+	case ebiten.KeyEscape:
+		g.l3.mode = CommandMode
+		g.l3.swapGem = Point{-1, -1}
+	}
+	if g.l3.swapGem.x != -1 && g.l3.swapGem != g.l3.cursorGem {
+		if result := swapSquares(g); !result {
+			PlaySound(failOgg)
+		}
+		g.l3.cursorGem = g.l3.swapGem
+	}
+
+}
+
+func initLevel3(g *Game) {
+	g.l3.numGems = 5
+	g.l3.cursorGem = Point{gemColumns / 2, gemRows / 2}
+	g.l3.swapGem = Point{-1, -1}
+	g.l3.gemGrid = make([][]Square, gemRows)
+	for y := range g.l3.gemGrid {
+		g.l3.gemGrid[y] = make([]Square, gemColumns)
+	}
+
+	for y, row := range g.l3.gemGrid {
+		for x, _ := range row {
+			g.l3.gemGrid[y][x].point = Point{x, y}
+		}
+	}
+
+	g.l3.triplesMask = make([][]bool, gemRows)
+	for i := range g.l3.triplesMask {
+		g.l3.triplesMask[i] = make([]bool, gemColumns)
+	}
+
+	g.l3.numGems = 5
+	g.l3.mode = CommandMode
+	fillRandom(g)
+
+	loadGems(g)
+}
+
+func loadGems(g *Game) {
+	g.l3.gemImages = make([]*ebiten.Image, g.l3.numGems)
+	for i := range g.l3.numGems {
+		image := loadImage("resources/Gem " + strconv.Itoa(i+1) + ".png")
+		g.l3.gemImages[i] = image
+	}
+}
+
+func (square *Square) SetZ(z int) {
+	square.z = z
+}
+
+// convert the x,y of the square into screen coordinates
+func squareToScreenPoint(squareXY Point) Point {
+	return Point{
+		gemCellSize*squareXY.x + gemsMargin + 2,
+		gemCellSize*squareXY.y + gemsMargin + 2,
+	}
+}
+
+func updateLevel3(g *Game) error {
+	// clear movers if expired
+	for y, row := range g.l3.gemGrid {
+		for x, _ := range row {
+			if g.l3.gemGrid[y][x].mover != nil {
+				if g.l3.gemGrid[y][x].mover.endFrame < g.frameCount {
+					g.l3.gemGrid[y][x].mover = nil
+					updateTriples(g)
+				}
+			}
+		}
+	}
+
+	g.keys = inpututil.AppendPressedKeys(g.keys[:0])
+	for _, key := range g.keys {
+		if inpututil.IsKeyJustPressed(key) {
+			switch g.l3.mode {
+			case CommandMode:
+				handleKeyCommand(g, key)
+			case InsertMode:
+				handleKeyInsert(g, key)
+			}
+		}
+	}
+	return nil
+}
+
+func updateTriples(g *Game) {
+	found, mask := findTriples(g.l3.gemGrid)
 
 	if found {
 		// now that we have completed detecting all triples we can update the game state
@@ -89,12 +297,12 @@ func UpdateTriples(g *Game) {
 		}
 	}
 
-	FillEmpties(g)
+	fillEmpties(g)
 }
 
-func FillEmpties(g *Game) {
+func fillEmpties(g *Game) {
 	// find empty square and move squares from above down to fill
-	for x := range numColumns {
+	for x := range gemColumns {
 		for y := range gemRows {
 			y = gemRows - 1 - y // work from bottom up
 			if g.l3.gemGrid[y][x].color == -1 {
@@ -111,7 +319,7 @@ func FillEmpties(g *Game) {
 	}
 
 	// fill empties at the top of the gemGrid with newly generated colors
-	for x := range numColumns {
+	for x := range gemColumns {
 		for y := range gemRows {
 			if g.l3.gemGrid[y][x].color == -1 {
 				g.l3.gemGrid[y][x].color = rng.Intn(g.l3.numGems)
@@ -152,6 +360,44 @@ func gameIsWon(g *Game) bool {
 				return false
 			}
 		}
+	}
+	return true
+}
+
+// Exchange positions of two neighboring squares, return false if unable to exchange.
+// The exchange fails if swap point and cursor point are the same (this can happen when
+// player attempts to move off the gemGrid). The exchange fails if both points have the
+// same value.
+func swapSquares(g *Game) bool {
+	if g.l3.swapGem == g.l3.cursorGem {
+		return false
+	}
+	if g.l3.gemGrid[g.l3.swapGem.y][g.l3.swapGem.x].point == g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x].point {
+		return false
+	}
+
+	// swap colors
+	fromSquare := &g.l3.gemGrid[g.l3.swapGem.y][g.l3.swapGem.x]
+	toSquare := &g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x]
+	temp := fromSquare.color
+	fromSquare.color = toSquare.color
+	toSquare.color = temp
+
+	// check if the swap will create a triple
+	makesATriple, _ := findTriples(g.l3.gemGrid)
+
+	if makesATriple {
+		toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
+		fromSquare.AddMover(g.frameCount, 60, toSquare.point, fromSquare.point)
+	} else {
+		// restore original colors
+		temp := fromSquare.color
+		fromSquare.color = toSquare.color
+		toSquare.color = temp
+		g.l3.swapGem = g.l3.cursorGem // return the cursor to the original location
+
+		// tell the user he made an invalid move
+		return false
 	}
 	return true
 }
