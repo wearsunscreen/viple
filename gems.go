@@ -16,7 +16,6 @@ const (
 	dropDuration  = 60
 	gemScale      = float64(gemCellSize-4) / float64(gemWidth)
 	gemWidth      = 100
-	gemsMargin    = 20
 	gemRows       = 11
 	gemColumns    = 5
 	swapDuration  = 40
@@ -191,7 +190,7 @@ func handleKeyInsert(g *Game, key ebiten.Key) {
 	case ebiten.KeyI:
 		PlaySound(failOgg)
 	case ebiten.KeyEscape:
-		g.l3.mode = CommandMode
+		g.l3.mode = NormalMode
 		g.l3.swapGem = Point{-1, -1}
 	}
 	if g.l3.swapGem.x != -1 && g.l3.swapGem != g.l3.cursorGem {
@@ -224,7 +223,7 @@ func initLevel3(g *Game) {
 	}
 
 	g.l3.numGems = 5
-	g.l3.mode = CommandMode
+	g.l3.mode = NormalMode
 	fillRandom(g)
 
 	loadGems(g)
@@ -244,9 +243,15 @@ func (square *Square) SetZ(z int) {
 
 // convert the x,y of the square into screen coordinates
 func squareToScreenPoint(squareXY Point) Point {
+	// get leftmost x
+	widthOfGrid := gemCellSize * gemColumns
+	xMargin := (screenWidth - widthOfGrid) / 2
+	// get top y
+	heightOfGrid := gemCellSize * gemRows
+	yMargin := (screenHeight - heightOfGrid) / 2
 	return Point{
-		gemCellSize*squareXY.x + gemsMargin + 2,
-		gemCellSize*squareXY.y + gemsMargin + 2,
+		gemCellSize*squareXY.x + xMargin,
+		gemCellSize*squareXY.y + yMargin,
 	}
 }
 
@@ -267,7 +272,7 @@ func updateLevel3(g *Game) error {
 	for _, key := range g.keys {
 		if inpututil.IsKeyJustPressed(key) {
 			switch g.l3.mode {
-			case CommandMode:
+			case NormalMode:
 				handleKeyCommand(g, key)
 			case InsertMode:
 				handleKeyInsert(g, key)

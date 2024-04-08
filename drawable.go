@@ -5,7 +5,7 @@ import (
 )
 
 // interface for things that are drawn to an image, screen
-type Drawer interface {
+type Drawable interface {
 	SetZ(z int)
 	GetZ() int
 	Draw(screen *ebiten.Image, frameCount int)

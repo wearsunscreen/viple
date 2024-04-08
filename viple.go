@@ -20,7 +20,7 @@ const (
 type Mode int
 
 const (
-	CommandMode = iota
+	NormalMode = iota
 	LineMode
 	InsertMode
 )
