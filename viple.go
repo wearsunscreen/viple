@@ -17,6 +17,13 @@ const (
 	version      = "Viple 0.1"
 )
 
+type Level int
+
+const (
+	Level1 = iota
+	Level3
+)
+
 type Mode int
 
 const (
@@ -33,8 +40,10 @@ type Game struct {
 	frameCount int
 	keyInput   string
 	keys       []ebiten.Key
+	l1         Level1Data
+	l3         Level3Data
+	level      Level
 	player     *AudioPlayer
-	l3         Level3
 }
 
 func main() {
@@ -53,17 +62,34 @@ func main() {
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(lightCoal)
-
+	switch g.level {
+	case Level1:
+		drawHBricks(screen, g)
+	case Level3:
+		drawGrid(screen, g)
+	}
 	drawGrid(screen, g)
-}
-
-func gameDimensions() (width int, height int) {
-	return screenWidth, screenHeight
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	w, h := gameDimensions()
 	return w, h
+}
+
+// function to fill slice of any type
+func fillSlice[T any](s []T, value T) []T {
+	if s == nil {
+		panic("slice cannot be nil")
+	}
+
+	for i := range s {
+		s[i] = value
+	}
+	return s
+}
+
+func gameDimensions() (width int, height int) {
+	return screenWidth, screenHeight
 }
 
 func loadImage(path string) *ebiten.Image {
@@ -77,13 +103,11 @@ func loadImage(path string) *ebiten.Image {
 func newGame() *Game {
 	g := Game{}
 
+	initLevel1(&g)
 	initLevel3(&g)
+	g.level = Level3
 
 	return &g
-}
-
-func offsetPoint(p, offset Point) Point {
-	return Point{p.x + offset.x, p.y + offset.y}
 }
 
 func seedRNG(seed int64) {

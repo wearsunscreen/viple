@@ -22,3 +22,7 @@ type Mover struct {
 type Point struct {
 	x, y int
 }
+
+func offsetPoint(p, offset Point) Point {
+	return Point{p.x + offset.x, p.y + offset.y}
+}

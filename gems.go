@@ -21,7 +21,7 @@ const (
 	swapDuration  = 40
 )
 
-type Level3 struct {
+type Level3Data struct {
 	cursorGem   Point
 	gemGrid     [][]Square
 	gemImages   []*ebiten.Image

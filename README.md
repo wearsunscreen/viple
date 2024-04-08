@@ -15,3 +15,4 @@ Copyright John Crane, 2024
 ** Level One - horizontal brick out
 ** Level Two - h and v brick out 
 * Scaler to animate gems
+* Fader to animate disappearing gems, bricks
