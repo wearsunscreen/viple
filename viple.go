@@ -17,7 +17,7 @@ const (
 	version      = "Viple 0.1"
 )
 
-type Level int
+type LevelID int
 
 const (
 	Level1 = iota
@@ -42,7 +42,7 @@ type Game struct {
 	keys       []ebiten.Key
 	l1         Level1Data
 	l3         Level3Data
-	level      Level
+	level      LevelID
 	player     *AudioPlayer
 }
 
@@ -68,7 +68,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	case Level3:
 		drawGrid(screen, g)
 	}
-	drawGrid(screen, g)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -105,7 +104,7 @@ func newGame() *Game {
 
 	initLevel1(&g)
 	initLevel3(&g)
-	g.level = Level3
+	g.level = Level1
 
 	return &g
 }
@@ -120,5 +119,11 @@ func seedRNG(seed int64) {
 
 func (g *Game) Update() error {
 	g.frameCount++
-	return updateLevel3(g)
+	switch g.level {
+	case Level1:
+		return updateLevel1(g)
+	case Level3:
+		return updateLevel3(g)
+	}
+	return nil
 }
