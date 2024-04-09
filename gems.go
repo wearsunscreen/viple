@@ -11,6 +11,12 @@ import (
 )
 
 const (
+	NormalMode = iota
+	LineMode
+	InsertMode
+)
+
+const (
 	blinkInverval = 60 / 2
 	gemCellSize   = 50
 	dropDuration  = 60
@@ -21,7 +27,7 @@ const (
 	swapDuration  = 40
 )
 
-type Level3Data struct {
+type LevelGemsVisualMode struct {
 	cursorGem   Point
 	gemGrid     [][]Square
 	gemImages   []*ebiten.Image
@@ -79,7 +85,7 @@ func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, fram
 	}
 }
 
-func (level3 *Level3Data) Draw(screen *ebiten.Image, frameCount int) {
+func (level3 *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 
 	// draw background of triples
 	for y, row := range level3.gemGrid {
@@ -146,7 +152,7 @@ func (square *Square) GetZ() int {
 	return square.z
 }
 
-func handleKeyCommand(level3 *Level3Data, key ebiten.Key) {
+func handleKeyCommand(level3 *LevelGemsVisualMode, key ebiten.Key) {
 	switch key {
 	case ebiten.KeyH:
 		level3.cursorGem.x = max(level3.cursorGem.x-1, 0)
@@ -178,7 +184,7 @@ func handleKeyCommand(level3 *Level3Data, key ebiten.Key) {
 	}
 }
 
-func handleKeyInsert(level3 *Level3Data, key ebiten.Key, frameCount int) {
+func handleKeyInsert(level3 *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyH:
 		level3.swapGem.x = max(level3.swapGem.x-1, 0)
@@ -202,7 +208,7 @@ func handleKeyInsert(level3 *Level3Data, key ebiten.Key, frameCount int) {
 	}
 }
 
-func (level3 *Level3Data) Initialize() {
+func (level3 *LevelGemsVisualMode) Initialize() {
 	level3.numGems = 5
 	level3.cursorGem = Point{gemColumns / 2, gemRows / 2}
 	level3.swapGem = Point{-1, -1}
@@ -229,7 +235,7 @@ func (level3 *Level3Data) Initialize() {
 	loadGems(level3)
 }
 
-func loadGems(level3 *Level3Data) {
+func loadGems(level3 *LevelGemsVisualMode) {
 	level3.gemImages = make([]*ebiten.Image, level3.numGems)
 	for i := range level3.numGems {
 		image := loadImage("resources/Gem " + strconv.Itoa(i+1) + ".png")
@@ -255,7 +261,7 @@ func squareToScreenPoint(squareXY Point) Point {
 	}
 }
 
-func (level3 *Level3Data) Update(frameCount int) (bool, error) {
+func (level3 *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 	// clear movers if expired
 	for y, row := range level3.gemGrid {
 		for x := range row {
@@ -278,6 +284,14 @@ func (level3 *Level3Data) Update(frameCount int) (bool, error) {
 				handleKeyInsert(level3, key, frameCount)
 			}
 		}
+		// cheat code to fill
+		if ebiten.IsKeyPressed(ebiten.KeyZ) {
+			for y := range level3.triplesMask {
+				level3.triplesMask[y] = make([]bool, numBrickCols)
+				fillSlice(level3.triplesMask[y], true)
+			}
+		}
+
 	}
 
 	if gameIsWon(level3) {
@@ -286,7 +300,7 @@ func (level3 *Level3Data) Update(frameCount int) (bool, error) {
 	return false, nil
 }
 
-func updateTriples(level3 *Level3Data, frameCount int) {
+func updateTriples(level3 *LevelGemsVisualMode, frameCount int) {
 	found, mask := findTriples(level3.gemGrid)
 
 	if found {
@@ -309,7 +323,7 @@ func updateTriples(level3 *Level3Data, frameCount int) {
 	fillEmpties(level3, frameCount)
 }
 
-func fillEmpties(level3 *Level3Data, frameCount int) {
+func fillEmpties(level3 *LevelGemsVisualMode, frameCount int) {
 	// find empty square and move squares from above down to fill
 	for x := range gemColumns {
 		for y := range gemRows {
@@ -344,7 +358,7 @@ func fillEmpties(level3 *Level3Data, frameCount int) {
 	}
 }
 
-func fillRandom(level3 *Level3Data) {
+func fillRandom(level3 *LevelGemsVisualMode) {
 	for y, row := range level3.gemGrid {
 		for x := range row {
 			level3.gemGrid[y][x].color = rng.Intn(level3.numGems)
@@ -352,7 +366,7 @@ func fillRandom(level3 *Level3Data) {
 	}
 }
 
-func findSquareAbove(level3 *Level3Data, p Point) Point {
+func findSquareAbove(level3 *LevelGemsVisualMode, p Point) Point {
 	for y := range p.y {
 		y = p.y - 1 - y
 		for level3.gemGrid[y][p.x].color != -1 {
@@ -362,7 +376,7 @@ func findSquareAbove(level3 *Level3Data, p Point) Point {
 	return Point{-1, -1} // did not find a square with color
 }
 
-func gameIsWon(level3 *Level3Data) bool {
+func gameIsWon(level3 *LevelGemsVisualMode) bool {
 	for y, row := range level3.gemGrid {
 		for x := range row {
 			if !level3.triplesMask[y][x] {
@@ -377,7 +391,7 @@ func gameIsWon(level3 *Level3Data) bool {
 // The exchange fails if swap point and cursor point are the same (this can happen when
 // player attempts to move off the gemGrid). The exchange fails if both points have the
 // same value.
-func swapSquares(level3 *Level3Data, frameCount int) bool {
+func swapSquares(level3 *LevelGemsVisualMode, frameCount int) bool {
 	if level3.swapGem == level3.cursorGem {
 		return false
 	}

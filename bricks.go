@@ -18,7 +18,7 @@ const (
 	paddleSpeed  = 5
 )
 
-type Level1Data struct {
+type LevelBricksHL struct {
 	bricks  [][]bool
 	ballDX  float32
 	ballDY  float32
@@ -48,7 +48,7 @@ func anyInSlice(bools []bool) bool {
 	return false
 }
 
-func (level1 *Level1Data) Draw(screen *ebiten.Image, frameCount int) {
+func (level1 *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 	// Draw background
 	screen.Fill(darkCoal)
 
@@ -73,7 +73,7 @@ func (level1 *Level1Data) Draw(screen *ebiten.Image, frameCount int) {
 	}
 }
 
-func (level1 *Level1Data) Initialize() {
+func (level1 *LevelBricksHL) Initialize() {
 	level1.paddleX = screenWidth/2 - paddleWidth/2
 	level1.paddleY = screenHeight - paddleHeight
 	level1.ballX = screenWidth / 2
@@ -88,8 +88,8 @@ func (level1 *Level1Data) Initialize() {
 	}
 }
 
-func (level1 *Level1Data) Update(frameCount int) (bool, error) {
-	if cheat := ebiten.IsKeyPressed(ebiten.KeyC); cheat {
+func (level1 *LevelBricksHL) Update(frameCount int) (bool, error) {
+	if ebiten.IsKeyPressed(ebiten.KeyC) {
 		for y := range level1.bricks {
 			level1.bricks[y] = make([]bool, numBrickCols)
 			fillSlice(level1.bricks[y], false)

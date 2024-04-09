@@ -27,17 +27,11 @@ type Level interface {
 type LevelID int
 
 const (
-	Level1 = iota
-	Level3
+	LevelIdBricksHL = iota
+	LevelIdGemsVM
 )
 
 type Mode int
-
-const (
-	NormalMode = iota
-	LineMode
-	InsertMode
-)
 
 var (
 	rng  *rand.Rand
@@ -46,8 +40,8 @@ var (
 
 type Game struct {
 	frameCount int
-	level1     Level1Data
-	level3     Level3Data
+	level1     LevelBricksHL
+	level3     LevelGemsVisualMode
 	level      LevelID
 }
 
@@ -68,9 +62,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(lightCoal)
 	switch g.level {
-	case Level1:
+	case LevelIdBricksHL:
 		g.level1.Draw(screen, g.frameCount)
-	case Level3:
+	case LevelIdGemsVM:
 		g.level3.Draw(screen, g.frameCount)
 	}
 }
@@ -109,7 +103,7 @@ func newGame() *Game {
 
 	g.level1.Initialize()
 	g.level3.Initialize()
-	g.level = Level1
+	g.level = LevelIdBricksHL
 
 	return &g
 }
@@ -127,9 +121,9 @@ func (g *Game) Update() error {
 	var b bool
 	var err error
 	switch g.level {
-	case Level1:
+	case LevelIdBricksHL:
 		b, err = g.level1.Update(g.frameCount)
-	case Level3:
+	case LevelIdGemsVM:
 		b, err = g.level3.Update(g.frameCount)
 	}
 	if b {
