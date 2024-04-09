@@ -17,6 +17,12 @@ const (
 	version      = "Viple 0.1"
 )
 
+type Level interface {
+	Draw(screen *ebiten.Image, g *Game)
+	// update every frame, return true if level is complete
+	Update(g *Game) (bool, error)
+}
+
 type LevelID int
 
 const (
@@ -40,8 +46,8 @@ type Game struct {
 	frameCount int
 	keyInput   string
 	keys       []ebiten.Key
-	l1         Level1Data
-	l3         Level3Data
+	level1     Level1Data
+	level3     Level3Data
 	level      LevelID
 	player     *AudioPlayer
 }
@@ -64,9 +70,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(lightCoal)
 	switch g.level {
 	case Level1:
-		drawHBricks(screen, g)
+		g.level1.Draw(screen, g)
 	case Level3:
-		drawGrid(screen, g)
+		g.level3.Draw(screen, g)
 	}
 }
 
@@ -119,11 +125,16 @@ func seedRNG(seed int64) {
 
 func (g *Game) Update() error {
 	g.frameCount++
+	var b bool
+	var err error
 	switch g.level {
 	case Level1:
-		return updateLevel1(g)
+		b, err = g.level1.Update(g)
 	case Level3:
-		return updateLevel3(g)
+		b, err = g.level3.Update(g)
 	}
-	return nil
+	if b {
+		g.level += 1
+	}
+	return err
 }

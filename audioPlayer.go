@@ -59,7 +59,3 @@ func PlaySound(ogg []byte) (*AudioPlayer, error) {
 func (p *AudioPlayer) Close() error {
 	return p.audioPlayer.Close()
 }
-
-func (p *AudioPlayer) update() error {
-	return nil
-}

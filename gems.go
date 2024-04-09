@@ -78,13 +78,13 @@ func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, fram
 	}
 }
 
-func drawGrid(screen *ebiten.Image, g *Game) {
+func (level3 *Level3Data) Draw(screen *ebiten.Image, g *Game) {
 
 	// draw background of triples
-	for y, row := range g.l3.gemGrid {
+	for y, row := range level3.gemGrid {
 		for x := range row {
-			if g.l3.triplesMask[y][x] {
-				g.l3.gemGrid[y][x].drawBackground(screen, darkButter)
+			if level3.triplesMask[y][x] {
+				level3.gemGrid[y][x].drawBackground(screen, darkButter)
 			}
 		}
 	}
@@ -92,17 +92,17 @@ func drawGrid(screen *ebiten.Image, g *Game) {
 	// draw cursor
 	cursorColors := [2]color.Color{color.White, color.Black}
 	blink := g.frameCount / blinkInverval % 2
-	if g.l3.mode == InsertMode {
+	if g.level3.mode == InsertMode {
 		// we are in swap mode, faster blink, brighter colors
 		blink = g.frameCount / (blinkInverval / 2) % 2
 		cursorColors = [2]color.Color{brightRed, lightButter}
 	}
-	g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x].drawBackground(screen, cursorColors[blink])
+	g.level3.gemGrid[g.level3.cursorGem.y][g.level3.cursorGem.x].drawBackground(screen, cursorColors[blink])
 
 	// draw gems
-	for y, row := range g.l3.gemGrid {
+	for y, row := range g.level3.gemGrid {
 		for x := range row {
-			g.l3.gemGrid[y][x].drawGem(screen, g.l3.gemImages[g.l3.gemGrid[y][x].color], g.frameCount)
+			g.level3.gemGrid[y][x].drawGem(screen, g.level3.gemImages[g.level3.gemGrid[y][x].color], g.frameCount)
 		}
 	}
 }
@@ -148,17 +148,17 @@ func (square *Square) GetZ() int {
 func handleKeyCommand(g *Game, key ebiten.Key) {
 	switch key {
 	case ebiten.KeyH:
-		g.l3.cursorGem.x = max(g.l3.cursorGem.x-1, 0)
+		g.level3.cursorGem.x = max(g.level3.cursorGem.x-1, 0)
 	case ebiten.KeyL:
-		g.l3.cursorGem.x = min(g.l3.cursorGem.x+1, gemColumns-1)
+		g.level3.cursorGem.x = min(g.level3.cursorGem.x+1, gemColumns-1)
 	case ebiten.KeyK:
-		g.l3.cursorGem.y = max(g.l3.cursorGem.y-1, 0)
+		g.level3.cursorGem.y = max(g.level3.cursorGem.y-1, 0)
 	case ebiten.KeyJ:
-		g.l3.cursorGem.y = min(g.l3.cursorGem.y+1, gemRows-1)
+		g.level3.cursorGem.y = min(g.level3.cursorGem.y+1, gemRows-1)
 	case ebiten.KeyI:
 		// entering InsertMode (where we do swaps)
-		g.l3.swapGem = g.l3.cursorGem
-		g.l3.mode = InsertMode
+		g.level3.swapGem = g.level3.cursorGem
+		g.level3.mode = InsertMode
 	case ebiten.KeySemicolon:
 		if ebiten.IsKeyPressed(ebiten.KeyShift) {
 			g.keyInput = g.keyInput + ":"
@@ -180,60 +180,60 @@ func handleKeyCommand(g *Game, key ebiten.Key) {
 func handleKeyInsert(g *Game, key ebiten.Key) {
 	switch key {
 	case ebiten.KeyH:
-		g.l3.swapGem.x = max(g.l3.swapGem.x-1, 0)
+		g.level3.swapGem.x = max(g.level3.swapGem.x-1, 0)
 	case ebiten.KeyL:
-		g.l3.swapGem.x = min(g.l3.swapGem.x+1, gemColumns-1)
+		g.level3.swapGem.x = min(g.level3.swapGem.x+1, gemColumns-1)
 	case ebiten.KeyK:
-		g.l3.swapGem.y = max(g.l3.swapGem.y-1, 0)
+		g.level3.swapGem.y = max(g.level3.swapGem.y-1, 0)
 	case ebiten.KeyJ:
-		g.l3.swapGem.y = min(g.l3.swapGem.y+1, gemRows-1)
+		g.level3.swapGem.y = min(g.level3.swapGem.y+1, gemRows-1)
 	case ebiten.KeyI:
 		PlaySound(failOgg)
 	case ebiten.KeyEscape:
-		g.l3.mode = NormalMode
-		g.l3.swapGem = Point{-1, -1}
+		g.level3.mode = NormalMode
+		g.level3.swapGem = Point{-1, -1}
 	}
-	if g.l3.swapGem.x != -1 && g.l3.swapGem != g.l3.cursorGem {
+	if g.level3.swapGem.x != -1 && g.level3.swapGem != g.level3.cursorGem {
 		if result := swapSquares(g); !result {
 			PlaySound(failOgg)
 		}
-		g.l3.cursorGem = g.l3.swapGem
+		g.level3.cursorGem = g.level3.swapGem
 	}
 
 }
 
 func initLevel3(g *Game) {
-	g.l3.numGems = 5
-	g.l3.cursorGem = Point{gemColumns / 2, gemRows / 2}
-	g.l3.swapGem = Point{-1, -1}
-	g.l3.gemGrid = make([][]Square, gemRows)
-	for y := range g.l3.gemGrid {
-		g.l3.gemGrid[y] = make([]Square, gemColumns)
+	g.level3.numGems = 5
+	g.level3.cursorGem = Point{gemColumns / 2, gemRows / 2}
+	g.level3.swapGem = Point{-1, -1}
+	g.level3.gemGrid = make([][]Square, gemRows)
+	for y := range g.level3.gemGrid {
+		g.level3.gemGrid[y] = make([]Square, gemColumns)
 	}
 
-	for y, row := range g.l3.gemGrid {
+	for y, row := range g.level3.gemGrid {
 		for x := range row {
-			g.l3.gemGrid[y][x].point = Point{x, y}
+			g.level3.gemGrid[y][x].point = Point{x, y}
 		}
 	}
 
-	g.l3.triplesMask = make([][]bool, gemRows)
-	for i := range g.l3.triplesMask {
-		g.l3.triplesMask[i] = make([]bool, gemColumns)
+	g.level3.triplesMask = make([][]bool, gemRows)
+	for i := range g.level3.triplesMask {
+		g.level3.triplesMask[i] = make([]bool, gemColumns)
 	}
 
-	g.l3.numGems = 5
-	g.l3.mode = NormalMode
+	g.level3.numGems = 5
+	g.level3.mode = NormalMode
 	fillRandom(g)
 
 	loadGems(g)
 }
 
 func loadGems(g *Game) {
-	g.l3.gemImages = make([]*ebiten.Image, g.l3.numGems)
-	for i := range g.l3.numGems {
+	g.level3.gemImages = make([]*ebiten.Image, g.level3.numGems)
+	for i := range g.level3.numGems {
 		image := loadImage("resources/Gem " + strconv.Itoa(i+1) + ".png")
-		g.l3.gemImages[i] = image
+		g.level3.gemImages[i] = image
 	}
 }
 
@@ -255,13 +255,13 @@ func squareToScreenPoint(squareXY Point) Point {
 	}
 }
 
-func updateLevel3(g *Game) error {
+func (level3 *Level3Data) Update(g *Game) (bool, error) {
 	// clear movers if expired
-	for y, row := range g.l3.gemGrid {
+	for y, row := range g.level3.gemGrid {
 		for x := range row {
-			if g.l3.gemGrid[y][x].mover != nil {
-				if g.l3.gemGrid[y][x].mover.endFrame < g.frameCount {
-					g.l3.gemGrid[y][x].mover = nil
+			if g.level3.gemGrid[y][x].mover != nil {
+				if g.level3.gemGrid[y][x].mover.endFrame < g.frameCount {
+					g.level3.gemGrid[y][x].mover = nil
 					updateTriples(g)
 				}
 			}
@@ -271,7 +271,7 @@ func updateLevel3(g *Game) error {
 	g.keys = inpututil.AppendPressedKeys(g.keys[:0])
 	for _, key := range g.keys {
 		if inpututil.IsKeyJustPressed(key) {
-			switch g.l3.mode {
+			switch g.level3.mode {
 			case NormalMode:
 				handleKeyCommand(g, key)
 			case InsertMode:
@@ -279,19 +279,23 @@ func updateLevel3(g *Game) error {
 			}
 		}
 	}
-	return nil
+
+	if gameIsWon(g) {
+		return true, nil
+	}
+	return false, nil
 }
 
 func updateTriples(g *Game) {
-	found, mask := findTriples(g.l3.gemGrid)
+	found, mask := findTriples(g.level3.gemGrid)
 
 	if found {
 		// now that we have completed detecting all triples we can update the game state
-		for y, row := range g.l3.gemGrid {
+		for y, row := range g.level3.gemGrid {
 			for x := range row {
 				if mask[y][x] {
-					g.l3.gemGrid[y][x].color = -1
-					g.l3.triplesMask[y][x] = true
+					g.level3.gemGrid[y][x].color = -1
+					g.level3.triplesMask[y][x] = true
 				}
 			}
 		}
@@ -310,14 +314,14 @@ func fillEmpties(g *Game) {
 	for x := range gemColumns {
 		for y := range gemRows {
 			y = gemRows - 1 - y // work from bottom up
-			if g.l3.gemGrid[y][x].color == -1 {
+			if g.level3.gemGrid[y][x].color == -1 {
 				above := findSquareAbove(g, Point{x, y})
 				if above.y >= 0 {
-					g.l3.gemGrid[y][x].color = g.l3.gemGrid[above.y][above.x].color
-					g.l3.gemGrid[above.y][above.x].color = -1
-					g.l3.gemGrid[y][x].AddMover(g.frameCount, dropDuration,
-						g.l3.gemGrid[above.y][above.x].point,
-						g.l3.gemGrid[y][x].point)
+					g.level3.gemGrid[y][x].color = g.level3.gemGrid[above.y][above.x].color
+					g.level3.gemGrid[above.y][above.x].color = -1
+					g.level3.gemGrid[y][x].AddMover(g.frameCount, dropDuration,
+						g.level3.gemGrid[above.y][above.x].point,
+						g.level3.gemGrid[y][x].point)
 				}
 			}
 		}
@@ -326,24 +330,24 @@ func fillEmpties(g *Game) {
 	// fill empties at the top of the gemGrid with newly generated colors
 	for x := range gemColumns {
 		for y := range gemRows {
-			if g.l3.gemGrid[y][x].color == -1 {
-				g.l3.gemGrid[y][x].color = rng.Intn(g.l3.numGems)
+			if g.level3.gemGrid[y][x].color == -1 {
+				g.level3.gemGrid[y][x].color = rng.Intn(g.level3.numGems)
 
 				// there's a bit of a kludge here. The call to offsetPoint should be equal to the height
 				// of the stack squares being removed, but don't calculate that height and just pass
 				// cellsize * -1.
-				g.l3.gemGrid[y][x].AddMover(g.frameCount, dropDuration,
-					offsetPoint(g.l3.gemGrid[y][x].point, Point{0, gemCellSize * -1}),
-					g.l3.gemGrid[y][x].point)
+				g.level3.gemGrid[y][x].AddMover(g.frameCount, dropDuration,
+					offsetPoint(g.level3.gemGrid[y][x].point, Point{0, gemCellSize * -1}),
+					g.level3.gemGrid[y][x].point)
 			}
 		}
 	}
 }
 
 func fillRandom(g *Game) {
-	for y, row := range g.l3.gemGrid {
+	for y, row := range g.level3.gemGrid {
 		for x := range row {
-			g.l3.gemGrid[y][x].color = rng.Intn(g.l3.numGems)
+			g.level3.gemGrid[y][x].color = rng.Intn(g.level3.numGems)
 		}
 	}
 }
@@ -351,7 +355,7 @@ func fillRandom(g *Game) {
 func findSquareAbove(g *Game, p Point) Point {
 	for y := range p.y {
 		y = p.y - 1 - y
-		for g.l3.gemGrid[y][p.x].color != -1 {
+		for g.level3.gemGrid[y][p.x].color != -1 {
 			return Point{p.x, y}
 		}
 	}
@@ -359,9 +363,9 @@ func findSquareAbove(g *Game, p Point) Point {
 }
 
 func gameIsWon(g *Game) bool {
-	for y, row := range g.l3.gemGrid {
+	for y, row := range g.level3.gemGrid {
 		for x := range row {
-			if !g.l3.triplesMask[y][x] {
+			if !g.level3.triplesMask[y][x] {
 				return false
 			}
 		}
@@ -374,22 +378,22 @@ func gameIsWon(g *Game) bool {
 // player attempts to move off the gemGrid). The exchange fails if both points have the
 // same value.
 func swapSquares(g *Game) bool {
-	if g.l3.swapGem == g.l3.cursorGem {
+	if g.level3.swapGem == g.level3.cursorGem {
 		return false
 	}
-	if g.l3.gemGrid[g.l3.swapGem.y][g.l3.swapGem.x].point == g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x].point {
+	if g.level3.gemGrid[g.level3.swapGem.y][g.level3.swapGem.x].point == g.level3.gemGrid[g.level3.cursorGem.y][g.level3.cursorGem.x].point {
 		return false
 	}
 
 	// swap colors
-	fromSquare := &g.l3.gemGrid[g.l3.swapGem.y][g.l3.swapGem.x]
-	toSquare := &g.l3.gemGrid[g.l3.cursorGem.y][g.l3.cursorGem.x]
+	fromSquare := &g.level3.gemGrid[g.level3.swapGem.y][g.level3.swapGem.x]
+	toSquare := &g.level3.gemGrid[g.level3.cursorGem.y][g.level3.cursorGem.x]
 	temp := fromSquare.color
 	fromSquare.color = toSquare.color
 	toSquare.color = temp
 
 	// check if the swap will create a triple
-	makesATriple, _ := findTriples(g.l3.gemGrid)
+	makesATriple, _ := findTriples(g.level3.gemGrid)
 
 	if makesATriple {
 		toSquare.AddMover(g.frameCount, 60, fromSquare.point, toSquare.point)
@@ -399,7 +403,7 @@ func swapSquares(g *Game) bool {
 		temp := fromSquare.color
 		fromSquare.color = toSquare.color
 		toSquare.color = temp
-		g.l3.swapGem = g.l3.cursorGem // return the cursor to the original location
+		g.level3.swapGem = g.level3.cursorGem // return the cursor to the original location
 
 		// tell the user he made an invalid move
 		return false
