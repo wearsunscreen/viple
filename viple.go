@@ -5,6 +5,7 @@ import (
 	_ "image/png"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -40,10 +41,11 @@ var (
 )
 
 type Game struct {
-	frameCount int
-	level1     LevelBricksHL
-	level3     LevelGemsVisualMode
-	level      LevelID
+	frameCount   int
+	levelHL      LevelBricksHL
+	levelHJKL    LevelBricksHJKL
+	levelVM      LevelGemsVisualMode
+	currentLevel LevelID
 }
 
 func main() {
@@ -62,11 +64,15 @@ func main() {
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	screen.Fill(lightCoal)
-	switch g.level {
+	switch g.currentLevel {
 	case LevelIdBricksHL:
-		g.level1.Draw(screen, g.frameCount)
+		g.levelHL.Draw(screen, g.frameCount)
+	case LevelIdBricksHJKL:
+		g.levelHJKL.Draw(screen, g.frameCount)
 	case LevelIdGemsVM:
-		g.level3.Draw(screen, g.frameCount)
+		g.levelVM.Draw(screen, g.frameCount)
+	default:
+		panic("Unknown game level " + strconv.Itoa(int(g.currentLevel)))
 	}
 }
 
@@ -102,9 +108,10 @@ func loadImage(path string) *ebiten.Image {
 func newGame() *Game {
 	g := Game{}
 
-	g.level1.Initialize()
-	g.level3.Initialize()
-	g.level = LevelIdBricksHL
+	g.levelHL.Initialize()
+	g.levelHJKL.Initialize()
+	g.levelVM.Initialize()
+	g.currentLevel = LevelIdBricksHL
 
 	return &g
 }
@@ -121,15 +128,18 @@ func (g *Game) Update() error {
 	g.frameCount++
 	var b bool
 	var err error
-	switch g.level {
+	switch g.currentLevel {
 	case LevelIdBricksHL:
-		b, err = g.level1.Update(g.frameCount)
+		b, err = g.levelHL.Update(g.frameCount)
+	case LevelIdBricksHJKL:
+		b, err = g.levelHJKL.Update(g.frameCount)
 	case LevelIdGemsVM:
-		b, err = g.level3.Update(g.frameCount)
+		b, err = g.levelVM.Update(g.frameCount)
 	}
 	if b {
 		// advance to next Level if current level has been won
-		g.level += 1
+		// bugbug: we don't handle completing the last level cleanly
+		g.currentLevel += 1
 	}
 	return err
 }

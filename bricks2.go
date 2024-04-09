@@ -71,7 +71,8 @@ func (level *LevelBricksHJKL) Initialize() {
 }
 
 func (level *LevelBricksHJKL) Update(frameCount int) (bool, error) {
-	if ebiten.IsKeyPressed(ebiten.KeyC) {
+	// cheat to complete level
+	if ebiten.IsKeyPressed(ebiten.KeyB) {
 		for y := range level.bricks {
 			level.bricks[y] = make([]bool, numBrickCols)
 			fillSlice(level.bricks[y], false)
