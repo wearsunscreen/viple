@@ -18,7 +18,8 @@ const (
 )
 
 type Level interface {
-	Draw(screen *ebiten.Image, g *Game)
+	Draw(screen *ebiten.Image, frameCount int)
+	Initialize()
 	// update every frame, return true if level is complete
 	Update(g *Game) (bool, error)
 }
@@ -39,17 +40,15 @@ const (
 )
 
 var (
-	rng *rand.Rand
+	rng  *rand.Rand
+	keys []ebiten.Key
 )
 
 type Game struct {
 	frameCount int
-	keyInput   string
-	keys       []ebiten.Key
 	level1     Level1Data
 	level3     Level3Data
 	level      LevelID
-	player     *AudioPlayer
 }
 
 func main() {
@@ -70,9 +69,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(lightCoal)
 	switch g.level {
 	case Level1:
-		g.level1.Draw(screen, g)
+		g.level1.Draw(screen, g.frameCount)
 	case Level3:
-		g.level3.Draw(screen, g)
+		g.level3.Draw(screen, g.frameCount)
 	}
 }
 
@@ -108,8 +107,8 @@ func loadImage(path string) *ebiten.Image {
 func newGame() *Game {
 	g := Game{}
 
-	initLevel1(&g)
-	initLevel3(&g)
+	g.level1.Initialize()
+	g.level3.Initialize()
 	g.level = Level1
 
 	return &g
@@ -129,9 +128,9 @@ func (g *Game) Update() error {
 	var err error
 	switch g.level {
 	case Level1:
-		b, err = g.level1.Update(g)
+		b, err = g.level1.Update(g.frameCount)
 	case Level3:
-		b, err = g.level3.Update(g)
+		b, err = g.level3.Update(g.frameCount)
 	}
 	if b {
 		g.level += 1

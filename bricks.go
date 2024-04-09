@@ -48,7 +48,7 @@ func anyInSlice(bools []bool) bool {
 	return false
 }
 
-func (level1 *Level1Data) Draw(screen *ebiten.Image, g *Game) {
+func (level1 *Level1Data) Draw(screen *ebiten.Image, frameCount int) {
 	// Draw background
 	screen.Fill(darkCoal)
 
@@ -73,22 +73,29 @@ func (level1 *Level1Data) Draw(screen *ebiten.Image, g *Game) {
 	}
 }
 
-func initLevel1(g *Game) {
-	g.level1.paddleX = screenWidth/2 - paddleWidth/2
-	g.level1.paddleY = screenHeight - paddleHeight
-	g.level1.ballX = screenWidth / 2
-	g.level1.ballY = screenHeight / 3 * 2
-	g.level1.ballDX = 2
-	g.level1.ballDY = -ballSpeedY
+func (level1 *Level1Data) Initialize() {
+	level1.paddleX = screenWidth/2 - paddleWidth/2
+	level1.paddleY = screenHeight - paddleHeight
+	level1.ballX = screenWidth / 2
+	level1.ballY = screenHeight / 3 * 2
+	level1.ballDX = 2
+	level1.ballDY = -ballSpeedY
 
-	g.level1.bricks = make([][]bool, numBrickRows)
-	for y := range g.level1.bricks {
-		g.level1.bricks[y] = make([]bool, numBrickCols)
-		fillSlice(g.level1.bricks[y], true)
+	level1.bricks = make([][]bool, numBrickRows)
+	for y := range level1.bricks {
+		level1.bricks[y] = make([]bool, numBrickCols)
+		fillSlice(level1.bricks[y], true)
 	}
 }
 
-func (level1 *Level1Data) Update(g *Game) (bool, error) {
+func (level1 *Level1Data) Update(frameCount int) (bool, error) {
+	if cheat := ebiten.IsKeyPressed(ebiten.KeyC); cheat {
+		for y := range level1.bricks {
+			level1.bricks[y] = make([]bool, numBrickCols)
+			fillSlice(level1.bricks[y], false)
+		}
+	}
+
 	// Update paddle position based on keyboard input
 	heldLeft := ebiten.IsKeyPressed(ebiten.KeyH)
 	heldRight := ebiten.IsKeyPressed(ebiten.KeyL)
@@ -117,7 +124,7 @@ func (level1 *Level1Data) Update(g *Game) (bool, error) {
 
 	// Check for ball off bottom of screen
 	if level1.ballY+ballRadius > screenHeight {
-		initLevel1(g)
+		level1.Initialize()
 	}
 
 	// Check for paddle collision

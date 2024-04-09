@@ -32,7 +32,7 @@ func init() {
 	audioContext = audio.NewContext(sampleRate)
 }
 
-func PlaySound(ogg []byte) (*AudioPlayer, error) {
+func PlaySound(ogg []byte) error {
 	type audioStream interface {
 		io.ReadSeeker
 		Length() int64
@@ -41,11 +41,11 @@ func PlaySound(ogg []byte) (*AudioPlayer, error) {
 	var err error
 	s, err = vorbis.DecodeWithoutResampling(bytes.NewReader(ogg))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	p, err := audioContext.NewPlayer(s)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	player := &AudioPlayer{
 		audioPlayer: p,
@@ -53,7 +53,7 @@ func PlaySound(ogg []byte) (*AudioPlayer, error) {
 
 	player.audioPlayer.Play()
 
-	return player, nil
+	return nil
 }
 
 func (p *AudioPlayer) Close() error {
