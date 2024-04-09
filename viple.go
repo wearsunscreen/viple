@@ -28,6 +28,7 @@ type LevelID int
 
 const (
 	LevelIdBricksHL = iota
+	LevelIdBricksHJKL
 	LevelIdGemsVM
 )
 
@@ -127,6 +128,7 @@ func (g *Game) Update() error {
 		b, err = g.level3.Update(g.frameCount)
 	}
 	if b {
+		// advance to next Level if current level has been won
 		g.level += 1
 	}
 	return err

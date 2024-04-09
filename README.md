@@ -11,8 +11,7 @@ Copyright John Crane, 2024
 ## To Do
 * Line mode, let navigate to any square
 * Level description
-* Multiple Levels
-** Level One - horizontal brick out
-** Level Two - h and v brick out 
+* Add IsGameWon to Level interface
+* Level Two - h and v brick out 
 * Scaler to animate gems
 * Fader to animate disappearing gems, bricks
