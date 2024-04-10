@@ -19,13 +19,17 @@ const (
 )
 
 type LevelBricksHL struct {
-	bricks  [][]bool
-	ballDX  float32
-	ballDY  float32
-	ballX   float32
-	ballY   float32
-	paddleX float32
-	paddleY float32
+	ballDX       float32
+	ballDY       float32
+	ballX        float32
+	ballY        float32
+	bricks       [][]bool
+	brickWidth   int
+	brickHeight  int
+	numBrickRows int
+	numBrickCols int
+	paddleX      float32
+	paddleY      float32
 }
 
 // return true is any value in the 2D slice is true
@@ -74,6 +78,11 @@ func (level *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 }
 
 func (level *LevelBricksHL) Initialize() {
+	level.brickWidth = screenWidth / numBrickCols
+	level.brickHeight = 50
+	level.numBrickRows = 3
+	level.numBrickCols = 5
+
 	level.paddleX = screenWidth/2 - paddleWidth/2
 	level.paddleY = screenHeight - paddleHeight
 	level.ballX = screenWidth / 2
@@ -137,9 +146,11 @@ func (level *LevelBricksHL) Update(frameCount int) (bool, error) {
 		ratio := (level.ballX - level.paddleX) / paddleWidth
 		level.ballDX = ratio*4 - 2
 		//log.Printf("ratio %f, dx is %f", ratio, level.ballDX)
+
+		PlaySound(paddleOgg)
 	}
 
-	// Check for brick collision (simplified for brevity)
+	// Check for brick collision
 	for y, row := range level.bricks {
 		for x, brick := range row {
 			if brick {
@@ -147,6 +158,8 @@ func (level *LevelBricksHL) Update(frameCount int) (bool, error) {
 					level.ballY > float32(y*brickHeight) && level.ballY < float32((y+1)*brickHeight) {
 					level.bricks[y][x] = false
 					level.ballDY *= -1
+					PlaySound(brickOgg)
+
 				}
 			}
 		}

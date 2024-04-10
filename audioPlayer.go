@@ -24,6 +24,12 @@ var winOgg []byte
 //go:embed resources/triple.ogg
 var tripleOgg []byte
 
+//go:embed resources/brick.ogg
+var brickOgg []byte
+
+//go:embed resources/paddle.ogg
+var paddleOgg []byte
+
 type AudioPlayer struct {
 	audioPlayer *audio.Player
 }
