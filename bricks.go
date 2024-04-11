@@ -8,10 +8,6 @@ import (
 const (
 	ballRadius   = 10
 	ballSpeedY   = 3.5
-	brickWidth   = screenWidth / numBrickCols
-	brickHeight  = 50
-	numBrickRows = 3
-	numBrickCols = 5
 	outlineWidth = 2
 	paddleWidth  = 100
 	paddleHeight = 20
@@ -24,8 +20,11 @@ type LevelBricksHL struct {
 	ballX        float32
 	ballY        float32
 	bricks       [][]bool
-	brickWidth   int
 	brickHeight  int
+	brickWidth   int
+	brickLeft    int
+	brickTop     int
+	level        LevelID
 	numBrickRows int
 	numBrickCols int
 	paddleX      float32
@@ -52,57 +51,79 @@ func anyInSlice(bools []bool) bool {
 	return false
 }
 
-func (level *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
+func (l *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 	// Draw background
 	screen.Fill(darkCoal)
 
 	// Draw paddle
-	vector.DrawFilledRect(screen, level.paddleX, screenHeight-paddleHeight, paddleWidth, paddleHeight, lightAluminium, false)
+	vector.DrawFilledRect(screen, l.paddleX, screenHeight-paddleHeight, paddleWidth, paddleHeight, lightAluminium, false)
 
 	// Draw ball
-	vector.DrawFilledCircle(screen, level.ballX, level.ballY, ballRadius, lightAluminium, false)
+	vector.DrawFilledCircle(screen, l.ballX, l.ballY, ballRadius, lightAluminium, false)
 
 	// Draw bricks with borders
-	for y := 0; y < len(level.bricks); y++ {
-		for x := 0; x < len(level.bricks[y]); x++ {
-			if level.bricks[y][x] {
+	for y := 0; y < len(l.bricks); y++ {
+		for x := 0; x < len(l.bricks[y]); x++ {
+			if l.bricks[y][x] {
 				// Draw brick
-				vector.DrawFilledRect(screen, float32(x*brickWidth), float32(y*brickHeight),
-					brickWidth, brickHeight, brightRed, false)
+				vector.DrawFilledRect(screen, float32(x*l.brickWidth+l.brickLeft), float32(y*l.brickHeight+l.brickTop),
+					float32(l.brickWidth), float32(l.brickHeight), brightRed, false)
 				// Draw border
-				vector.StrokeRect(screen, float32(x*brickWidth), float32(y*brickHeight),
-					brickWidth, brickHeight, outlineWidth, mediumCoal, false)
+				vector.StrokeRect(screen, float32(x*l.brickWidth+l.brickLeft), float32(y*l.brickHeight+l.brickTop),
+					float32(l.brickWidth), float32(l.brickHeight), outlineWidth, mediumCoal, false)
 			}
 		}
 	}
 }
 
-func (level *LevelBricksHL) Initialize() {
-	level.brickWidth = screenWidth / numBrickCols
-	level.brickHeight = 50
-	level.numBrickRows = 3
-	level.numBrickCols = 5
+func (l *LevelBricksHL) Initialize() {
+	if l.level == LevelIdBricksHL {
+		l.numBrickRows = 3
+		l.numBrickCols = 5
+		l.brickWidth = screenWidth / l.numBrickCols
+		l.brickHeight = 50
+		l.brickWidth = screenWidth / l.numBrickCols
+		l.brickHeight = 50
 
-	level.paddleX = screenWidth/2 - paddleWidth/2
-	level.paddleY = screenHeight - paddleHeight
-	level.ballX = screenWidth / 2
-	level.ballY = screenHeight / 3 * 2
-	level.ballDX = 2
-	level.ballDY = -ballSpeedY
+		l.paddleX = screenWidth/2 - paddleWidth/2
+		l.paddleY = screenHeight - paddleHeight
+		l.ballX = screenWidth / 2
+		l.ballY = screenHeight / 3 * 2
+		l.ballDX = 2
+		l.ballDY = -ballSpeedY
+	} else {
+		l.brickWidth = 50
+		l.brickHeight = 50
+		l.numBrickRows = 3
+		l.numBrickCols = 5
+		l.brickLeft = (screenWidth - l.brickWidth*l.numBrickCols) / 2
+		l.brickTop = (screenHeight - l.brickHeight*l.numBrickRows) / 2
 
-	level.bricks = make([][]bool, numBrickRows)
-	for y := range level.bricks {
-		level.bricks[y] = make([]bool, numBrickCols)
-		fillSlice(level.bricks[y], true)
+		l.paddleX = screenWidth/2 - paddleWidth/2
+		l.paddleY = screenHeight - paddleHeight
+		l.ballX = screenWidth / 2
+		l.ballY = screenHeight / 3 * 2
+		l.ballDX = 2
+		l.ballDY = -ballSpeedY
+	}
+
+	l.bricks = make([][]bool, l.numBrickRows)
+	for y := range l.bricks {
+		l.bricks[y] = make([]bool, l.numBrickCols)
+		fillSlice(l.bricks[y], true)
 	}
 }
 
-func (level *LevelBricksHL) Update(frameCount int) (bool, error) {
+func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
 	// cheat to complete level
-	if ebiten.IsKeyPressed(ebiten.KeyA) {
-		for y := range level.bricks {
-			level.bricks[y] = make([]bool, numBrickCols)
-			fillSlice(level.bricks[y], false)
+	cheatKey := ebiten.KeyA
+	if l.level == LevelIdBricksHJKL {
+		cheatKey = ebiten.KeyB
+	}
+	if ebiten.IsKeyPressed(cheatKey) {
+		for y := range l.bricks {
+			l.bricks[y] = make([]bool, l.numBrickCols)
+			fillSlice(l.bricks[y], false)
 		}
 	}
 
@@ -111,53 +132,53 @@ func (level *LevelBricksHL) Update(frameCount int) (bool, error) {
 	heldRight := ebiten.IsKeyPressed(ebiten.KeyL)
 	if heldLeft || heldRight {
 		if heldLeft && !heldRight {
-			level.paddleX -= paddleSpeed
+			l.paddleX -= paddleSpeed
 		} else if !heldLeft && heldRight {
-			level.paddleX += paddleSpeed
+			l.paddleX += paddleSpeed
 		}
 	}
 
 	// Clamp paddle movement within screen bounds
-	if level.paddleX < 0 {
-		level.paddleX = 0
-	} else if level.paddleX > screenWidth-paddleWidth {
-		level.paddleX = screenWidth - paddleWidth
+	if l.paddleX < 0 {
+		l.paddleX = 0
+	} else if l.paddleX > screenWidth-paddleWidth {
+		l.paddleX = screenWidth - paddleWidth
 	}
 
 	// Check for wall collisions
-	if level.ballX < 0 || level.ballX > screenWidth-ballRadius {
-		level.ballDX *= -1
+	if l.ballX < 0 || l.ballX > screenWidth-ballRadius {
+		l.ballDX *= -1
 	}
-	if level.ballY < 0 {
-		level.ballDY *= -1
+	if l.ballY < 0 {
+		l.ballDY *= -1
 	}
 
 	// Check for ball off bottom of screen
-	if level.ballY+ballRadius > screenHeight {
-		level.Initialize()
+	if l.ballY+ballRadius > screenHeight {
+		l.Initialize()
 	}
 
 	// Check for paddle collision
-	if level.ballY+ballRadius > screenHeight-paddleHeight &&
-		level.ballX >= level.paddleX && level.ballX <= level.paddleX+paddleWidth {
-		level.ballDY *= -1
+	if l.ballY+ballRadius > screenHeight-paddleHeight &&
+		l.ballX >= l.paddleX && l.ballX <= l.paddleX+paddleWidth {
+		l.ballDY *= -1
 
 		// modify angle depending on where the ball hits the paddle
-		ratio := (level.ballX - level.paddleX) / paddleWidth
-		level.ballDX = ratio*4 - 2
-		//log.Printf("ratio %f, dx is %f", ratio, level.ballDX)
+		ratio := (l.ballX - l.paddleX) / paddleWidth
+		l.ballDX = ratio*4 - 2
+		//log.Printf("ratio %f, dx is %f", ratio, l.ballDX)
 
 		PlaySound(paddleOgg)
 	}
 
 	// Check for brick collision
-	for y, row := range level.bricks {
+	for y, row := range l.bricks {
 		for x, brick := range row {
 			if brick {
-				if level.ballX > float32(x*brickWidth) && level.ballX < float32((x+1)*brickWidth) &&
-					level.ballY > float32(y*brickHeight) && level.ballY < float32((y+1)*brickHeight) {
-					level.bricks[y][x] = false
-					level.ballDY *= -1
+				if l.ballX > float32(x*l.brickWidth+l.brickLeft) && l.ballX < float32((x+1)*l.brickWidth+l.brickLeft) &&
+					l.ballY > float32(y*l.brickHeight+l.brickTop) && l.ballY < float32((y+1)*l.brickHeight+l.brickTop) {
+					l.bricks[y][x] = false
+					l.ballDY *= -1
 					PlaySound(brickOgg)
 
 				}
@@ -166,9 +187,9 @@ func (level *LevelBricksHL) Update(frameCount int) (bool, error) {
 	}
 
 	// Update ball position
-	if anyIn2DSlice(level.bricks) {
-		level.ballX += level.ballDX
-		level.ballY += level.ballDY
+	if anyIn2DSlice(l.bricks) {
+		l.ballX += l.ballDX
+		l.ballY += l.ballDY
 	} else {
 		return true, nil
 	}

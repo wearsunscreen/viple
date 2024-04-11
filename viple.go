@@ -43,7 +43,6 @@ var (
 type Game struct {
 	frameCount   int
 	levelHL      LevelBricksHL
-	levelHJKL    LevelBricksHJKL
 	levelVM      LevelGemsVisualMode
 	currentLevel LevelID
 }
@@ -67,7 +66,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	case LevelIdBricksHL:
 		g.levelHL.Draw(screen, g.frameCount)
 	case LevelIdBricksHJKL:
-		g.levelHJKL.Draw(screen, g.frameCount)
+		g.levelHL.Draw(screen, g.frameCount)
 	case LevelIdGemsVM:
 		g.levelVM.Draw(screen, g.frameCount)
 	default:
@@ -108,7 +107,6 @@ func newGame() *Game {
 	g := Game{}
 
 	g.levelHL.Initialize()
-	g.levelHJKL.Initialize()
 	g.levelVM.Initialize()
 	g.currentLevel = LevelIdBricksHL
 
@@ -131,7 +129,7 @@ func (g *Game) Update() error {
 	case LevelIdBricksHL:
 		levelOver, err = g.levelHL.Update(g.frameCount)
 	case LevelIdBricksHJKL:
-		levelOver, err = g.levelHJKL.Update(g.frameCount)
+		levelOver, err = g.levelHL.Update(g.frameCount)
 	case LevelIdGemsVM:
 		levelOver, err = g.levelVM.Update(g.frameCount)
 	}
@@ -139,6 +137,11 @@ func (g *Game) Update() error {
 		// advance to next Level if current level has been won
 		// bugbug: we don't handle completing the last level cleanly
 		g.currentLevel += 1
+
+		if g.currentLevel == LevelIdBricksHJKL {
+			g.levelHL.level = g.currentLevel
+			g.levelHL.Initialize()
+		}
 	}
 	return err
 }

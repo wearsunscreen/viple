@@ -23,7 +23,7 @@ const (
 	gemScale      = float64(gemCellSize-4) / float64(gemWidth)
 	gemWidth      = 100
 	gemRows       = 11
-	gemColumns    = 5
+	numGemColumns = 5
 	swapDuration  = 40
 )
 
@@ -70,7 +70,7 @@ func (level *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 		cursorStart, cursorEnd := highLow(level.cursorGem, level.swapGem)
 		startX := cursorStart.x
 		for y := cursorStart.y; y <= cursorEnd.y; y++ {
-			for x := startX; x < numBrickCols; x++ {
+			for x := startX; x < numGemColumns; x++ {
 				level.gemGrid[y][x].drawBackground(screen, darkGreen)
 				if x == cursorEnd.x && y == cursorEnd.y {
 					level.gemGrid[y][x].drawBackground(screen, darkGreen)
@@ -96,11 +96,11 @@ func (level *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 
 func (level *LevelGemsVisualMode) Initialize() {
 	level.numGems = 5
-	level.cursorGem = Point{gemColumns / 2, gemRows / 2}
+	level.cursorGem = Point{numGemColumns / 2, gemRows / 2}
 	level.swapGem = Point{-1, -1}
 	level.gemGrid = make([][]Square, gemRows)
 	for y := range level.gemGrid {
-		level.gemGrid[y] = make([]Square, gemColumns)
+		level.gemGrid[y] = make([]Square, numGemColumns)
 	}
 
 	for y, row := range level.gemGrid {
@@ -111,7 +111,7 @@ func (level *LevelGemsVisualMode) Initialize() {
 
 	level.triplesMask = make([][]bool, gemRows)
 	for i := range level.triplesMask {
-		level.triplesMask[i] = make([]bool, gemColumns)
+		level.triplesMask[i] = make([]bool, numGemColumns)
 	}
 
 	level.numGems = 5
@@ -147,7 +147,7 @@ func (level *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 		// cheat code to fill
 		if ebiten.IsKeyPressed(ebiten.KeyZ) {
 			for y := range level.triplesMask {
-				level.triplesMask[y] = make([]bool, numBrickCols)
+				level.triplesMask[y] = make([]bool, numGemColumns)
 				fillSlice(level.triplesMask[y], true)
 			}
 		}
@@ -230,7 +230,7 @@ func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
 
 func fillEmpties(level *LevelGemsVisualMode, frameCount int) {
 	// find empty square and move squares from above down to fill
-	for x := range gemColumns {
+	for x := range numGemColumns {
 		for y := range gemRows {
 			y = gemRows - 1 - y // work from bottom up
 			if level.gemGrid[y][x].color == -1 {
@@ -247,7 +247,7 @@ func fillEmpties(level *LevelGemsVisualMode, frameCount int) {
 	}
 
 	// fill empties at the top of the gemGrid with newly generated colors
-	for x := range gemColumns {
+	for x := range numGemColumns {
 		for y := range gemRows {
 			if level.gemGrid[y][x].color == -1 {
 				level.gemGrid[y][x].color = rng.Intn(level.numGems)
@@ -285,7 +285,7 @@ func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	// create a local mask to mark all square that are in triples
 	mask := make([][]bool, gemRows)
 	for i := range mask {
-		mask[i] = make([]bool, gemColumns)
+		mask[i] = make([]bool, numGemColumns)
 	}
 
 	found := false
@@ -320,7 +320,7 @@ func handleKeyCommand(level *LevelGemsVisualMode, key ebiten.Key) {
 	case ebiten.KeyH:
 		level.cursorGem.x = max(level.cursorGem.x-1, 0)
 	case ebiten.KeyL:
-		level.cursorGem.x = min(level.cursorGem.x+1, gemColumns-1)
+		level.cursorGem.x = min(level.cursorGem.x+1, numGemColumns-1)
 	case ebiten.KeyK:
 		level.cursorGem.y = max(level.cursorGem.y-1, 0)
 	case ebiten.KeyJ:
@@ -352,7 +352,7 @@ func handleKeyVisual(level *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 	case ebiten.KeyH:
 		level.swapGem.x = max(level.swapGem.x-1, 0)
 	case ebiten.KeyL:
-		level.swapGem.x = min(level.swapGem.x+1, gemColumns-1)
+		level.swapGem.x = min(level.swapGem.x+1, numGemColumns-1)
 	case ebiten.KeyK:
 		level.swapGem.y = max(level.swapGem.y-1, 0)
 	case ebiten.KeyJ:
@@ -419,7 +419,7 @@ func loadGems(level *LevelGemsVisualMode) {
 // convert the x,y of the square into screen coordinates
 func squareToScreenPoint(squareXY Point) Point {
 	// get leftmost x
-	widthOfGrid := gemCellSize * gemColumns
+	widthOfGrid := gemCellSize * numGemColumns
 	xMargin := (screenWidth - widthOfGrid) / 2
 	// get top y
 	heightOfGrid := gemCellSize * gemRows
