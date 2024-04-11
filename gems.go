@@ -12,7 +12,7 @@ import (
 
 const (
 	NormalMode = iota
-	LineMode
+	VisualMode
 	InsertMode
 )
 
@@ -85,7 +85,26 @@ func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, fram
 	}
 }
 
+// return the highest and lowest points in that order where highest is closest to the top left of the screen
+func highLow(p1, p2 Point) (Point, Point) {
+	if p1.y == p2.y {
+		if p1.x >= p2.x {
+			return p2, p1
+		} else {
+			return p1, p2
+		}
+	} else {
+		if p1.y > p2.y {
+			return p2, p1
+		} else {
+			return p1, p2
+		}
+	}
+}
+
 func (level *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
+
+	screen.Fill(mediumCoal)
 
 	// draw background of triples
 	for y, row := range level.gemGrid {
@@ -99,12 +118,30 @@ func (level *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	// draw cursor
 	cursorColors := [2]color.Color{color.White, color.Black}
 	blink := frameCount / blinkInverval % 2
-	if level.mode == InsertMode {
+	if level.mode == VisualMode {
 		// we are in swap mode, faster blink, brighter colors
 		blink = frameCount / (blinkInverval / 2) % 2
 		cursorColors = [2]color.Color{brightRed, lightButter}
+
+		// draw visualmode cursor
+		cursorStart, cursorEnd := highLow(level.cursorGem, level.swapGem)
+		startX := cursorStart.x
+		for y := cursorStart.y; y <= cursorEnd.y; y++ {
+			for x := startX; x < numBrickCols; x++ {
+				level.gemGrid[y][x].drawBackground(screen, darkGreen)
+				if x == cursorEnd.x && y == cursorEnd.y {
+					level.gemGrid[y][x].drawBackground(screen, darkGreen)
+					break
+				}
+				// start next line at left edge
+				startX = 0
+			}
+		}
+		level.gemGrid[level.swapGem.y][level.swapGem.x].drawBackground(screen, cursorColors[blink])
+	} else {
+		// draw cursor
+		level.gemGrid[level.cursorGem.y][level.cursorGem.x].drawBackground(screen, cursorColors[blink])
 	}
-	level.gemGrid[level.cursorGem.y][level.cursorGem.x].drawBackground(screen, cursorColors[blink])
 
 	// draw gems
 	for y, row := range level.gemGrid {
@@ -162,10 +199,10 @@ func handleKeyCommand(level *LevelGemsVisualMode, key ebiten.Key) {
 		level.cursorGem.y = max(level.cursorGem.y-1, 0)
 	case ebiten.KeyJ:
 		level.cursorGem.y = min(level.cursorGem.y+1, gemRows-1)
-	case ebiten.KeyI:
-		// entering InsertMode (where we do swaps)
+	case ebiten.KeyV:
+		// entering VisualMode (where we do swaps)
 		level.swapGem = level.cursorGem
-		level.mode = InsertMode
+		level.mode = VisualMode
 	case ebiten.KeySemicolon:
 		if ebiten.IsKeyPressed(ebiten.KeyShift) {
 			level.keyInput = level.keyInput + ":"
@@ -184,7 +221,7 @@ func handleKeyCommand(level *LevelGemsVisualMode, key ebiten.Key) {
 	}
 }
 
-func handleKeyInsert(level *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
+func handleKeyVisual(level *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyH:
 		level.swapGem.x = max(level.swapGem.x-1, 0)
@@ -194,17 +231,26 @@ func handleKeyInsert(level *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 		level.swapGem.y = max(level.swapGem.y-1, 0)
 	case ebiten.KeyJ:
 		level.swapGem.y = min(level.swapGem.y+1, gemRows-1)
-	case ebiten.KeyI:
+	case ebiten.KeyV:
 		PlaySound(failOgg)
 	case ebiten.KeyEscape:
+		// exit visual mode without swapping
 		level.mode = NormalMode
-		level.swapGem = Point{-1, -1}
-	}
-	if level.swapGem.x != -1 && level.swapGem != level.cursorGem {
-		if result := swapSquares(level, frameCount); !result {
-			PlaySound(failOgg)
-		}
 		level.cursorGem = level.swapGem
+		level.swapGem = Point{-1, -1}
+	case ebiten.KeyY:
+		// attempt swap
+		if level.swapGem.x != -1 && level.swapGem != level.cursorGem {
+			if result := swapSquares(level, frameCount); result {
+				// swap successful
+				// exiting visual mode
+				level.mode = NormalMode
+				level.cursorGem = level.swapGem
+				level.swapGem = Point{-1, -1}
+			} else {
+				PlaySound(failOgg)
+			}
+		}
 	}
 }
 
@@ -280,8 +326,8 @@ func (level *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 			switch level.mode {
 			case NormalMode:
 				handleKeyCommand(level, key)
-			case InsertMode:
-				handleKeyInsert(level, key, frameCount)
+			case VisualMode:
+				handleKeyVisual(level, key, frameCount)
 			}
 		}
 		// cheat code to fill
@@ -313,9 +359,9 @@ func updateTriples(level *LevelGemsVisualMode, frameCount int) {
 			}
 		}
 		if gameIsWon(level) {
-			_ = PlaySound(winOgg)
+			PlaySound(winOgg)
 		} else {
-			_ = PlaySound(tripleOgg)
+			PlaySound(tripleOgg)
 		}
 	}
 
@@ -394,9 +440,11 @@ func swapSquares(level *LevelGemsVisualMode, frameCount int) bool {
 	if level.swapGem == level.cursorGem {
 		return false
 	}
-	if level.gemGrid[level.swapGem.y][level.swapGem.x].point == level.gemGrid[level.cursorGem.y][level.cursorGem.x].point {
-		return false
-	}
+	/*
+		if level.gemGrid[level.swapGem.y][level.swapGem.x].point == level.gemGrid[level.cursorGem.y][level.cursorGem.x].point {
+			return false
+		}
+	*/
 
 	// swap colors
 	fromSquare := &level.gemGrid[level.swapGem.y][level.swapGem.x]

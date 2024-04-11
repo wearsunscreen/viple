@@ -9,8 +9,6 @@ Copyright John Crane, 2024
 * The first swap will allow act like a swap if there are triples on the board even if the swap does not create a triple.
 
 ## To Do
-* add sounds for bricks
-* Add IsGameWon to Level interface
 * Visual mode, let navigate to any square
 * Level description
 ** to introduce a level

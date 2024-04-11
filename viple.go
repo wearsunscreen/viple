@@ -63,7 +63,6 @@ func main() {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
-	screen.Fill(lightCoal)
 	switch g.currentLevel {
 	case LevelIdBricksHL:
 		g.levelHL.Draw(screen, g.frameCount)
@@ -126,17 +125,17 @@ func seedRNG(seed int64) {
 
 func (g *Game) Update() error {
 	g.frameCount++
-	var b bool
+	var levelOver bool
 	var err error
 	switch g.currentLevel {
 	case LevelIdBricksHL:
-		b, err = g.levelHL.Update(g.frameCount)
+		levelOver, err = g.levelHL.Update(g.frameCount)
 	case LevelIdBricksHJKL:
-		b, err = g.levelHJKL.Update(g.frameCount)
+		levelOver, err = g.levelHJKL.Update(g.frameCount)
 	case LevelIdGemsVM:
-		b, err = g.levelVM.Update(g.frameCount)
+		levelOver, err = g.levelVM.Update(g.frameCount)
 	}
-	if b {
+	if levelOver {
 		// advance to next Level if current level has been won
 		// bugbug: we don't handle completing the last level cleanly
 		g.currentLevel += 1
