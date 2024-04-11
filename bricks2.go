@@ -22,8 +22,10 @@ type LevelBricksHJKL struct {
 	ballX        float32
 	ballY        float32
 	bricks       [][]bool
-	brickWidth   int
 	brickHeight  int
+	brickWidth   int
+	brickLeft    int
+	brickTop     int
 	numBrickRows int
 	numBrickCols int
 	paddleX      float32
@@ -45,21 +47,23 @@ func (level *LevelBricksHJKL) Draw(screen *ebiten.Image, frameCount int) {
 		for x := 0; x < len(level.bricks[y]); x++ {
 			if level.bricks[y][x] {
 				// Draw brick
-				vector.DrawFilledRect(screen, float32(x*brickWidth), float32(y*brickHeight),
-					brickWidth, brickHeight, brightRed, false)
+				vector.DrawFilledRect(screen, float32(x*level.brickWidth+level.brickLeft), float32(y*level.brickHeight+level.brickTop),
+					float32(level.brickWidth), float32(level.brickHeight), brightRed, false)
 				// Draw border
-				vector.StrokeRect(screen, float32(x*brickWidth), float32(y*brickHeight),
-					brickWidth, brickHeight, outlineWidth, mediumCoal, false)
+				vector.StrokeRect(screen, float32(x*level.brickWidth+level.brickLeft), float32(y*level.brickHeight+level.brickTop),
+					float32(level.brickWidth), float32(level.brickHeight), outlineWidth, mediumCoal, false)
 			}
 		}
 	}
 }
 
 func (level *LevelBricksHJKL) Initialize() {
-	level.brickWidth = screenWidth / numBrickCols
+	level.brickWidth = 50
 	level.brickHeight = 50
 	level.numBrickRows = 3
 	level.numBrickCols = 5
+	level.brickLeft = (screenWidth - level.brickWidth*level.numBrickCols) / 2
+	level.brickTop = (screenHeight - level.brickHeight*level.numBrickRows) / 2
 
 	level.paddleX = screenWidth/2 - paddleWidth/2
 	level.paddleY = screenHeight - paddleHeight
