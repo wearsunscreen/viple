@@ -9,7 +9,7 @@ Copyright John Crane, 2024
 * The first swap will allow act like a swap if there are triples on the board even if the swap does not create a triple.
 
 ## To Do
-* add top left right paddles
+* flappybird for level 2
 * bricks 1 and 2 using function pointers for polymorphism
 * Level description
 ** to introduce a level
