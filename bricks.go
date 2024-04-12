@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -29,6 +30,7 @@ type LevelBricksHL struct {
 	brickLeft    int
 	brickTop     int
 	level        LevelID
+	minimumSpeed float64
 	numBrickRows int
 	numBrickCols int
 	paddlesX     float32
@@ -62,8 +64,31 @@ func (l *LevelBricksHL) CheckBrickCollisions() {
 			if brick {
 				if l.ballX > float32(x*l.brickWidth+l.brickLeft) && l.ballX < float32((x+1)*l.brickWidth+l.brickLeft) &&
 					l.ballY > float32(y*l.brickHeight+l.brickTop) && l.ballY < float32((y+1)*l.brickHeight+l.brickTop) {
+
+					// we have a collision,clear the brick
 					l.bricks[y][x] = false
-					l.ballDY *= -1
+
+					//let's find the closest edge to determine which direction to change
+					leftD := math.Abs(float64(l.ballX - float32(x*l.brickWidth+l.brickLeft)))
+					rightD := math.Abs(float64(l.ballX - float32((x+1)*l.brickWidth+l.brickLeft)))
+					topD := math.Abs(float64(l.ballY - float32(y*l.brickHeight+l.brickTop)))
+					bottomD := math.Abs(float64(l.ballY - float32((y+1)*l.brickHeight+l.brickTop)))
+					minD := math.Min(leftD, rightD)
+					minD = math.Min(minD, topD)
+					minD = math.Min(minD, bottomD)
+					switch {
+					case minD == leftD:
+						l.ballDX *= -1
+					case minD == rightD:
+						l.ballDX *= -1
+					case minD == topD:
+						l.ballDY *= -1
+					case minD == bottomD:
+						l.ballDY *= -1
+					default:
+						panic("Bad collision calculation")
+					}
+
 					PlaySound(brickOgg)
 				}
 			}
@@ -86,7 +111,7 @@ func (l *LevelBricksHL) CheckForCheatKey() {
 }
 
 func (l *LevelBricksHL) CheckPaddleCollisions() {
-	// Check for paddle collision
+	// Check for bottom paddle collision
 	if l.ballY+ballRadius > screenHeight-paddlesXHeight &&
 		l.ballX >= l.paddlesX && l.ballX <= l.paddlesX+paddlesXWidth {
 		l.ballDY *= -1
@@ -100,6 +125,7 @@ func (l *LevelBricksHL) CheckPaddleCollisions() {
 	}
 
 	if l.level == LevelIdBricksHJKL {
+		// check top paddle collision
 		if l.ballY-ballRadius < paddlesXHeight &&
 			l.ballX >= l.paddlesX && l.ballX <= l.paddlesX+paddlesXWidth {
 			l.ballDY *= -1
@@ -112,17 +138,37 @@ func (l *LevelBricksHL) CheckPaddleCollisions() {
 			PlaySound(paddleOgg)
 		}
 
-		if l.ballX+ballRadius < paddlesYWidth &&
+		// check left paddle
+		if l.ballX-ballRadius < paddlesYWidth &&
 			l.ballY >= l.paddlesY && l.ballY <= l.paddlesY+paddlesYHeight {
 			l.ballDX *= -1
 
 			// modify angle depending on where the ball hits the paddle
-			ratio := (l.ballX - l.paddlesX) / paddlesXWidth
-			l.ballDX = ratio*4 - 2
+			ratio := (l.ballY - l.paddlesY) / paddlesYHeight
+			l.ballDY = ratio*4 - 2
 			log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
 
 			PlaySound(paddleOgg)
 		}
+
+		// check right paddle
+		if l.ballX+ballRadius > screenWidth-paddlesYWidth &&
+			l.ballY >= l.paddlesY && l.ballY <= l.paddlesY+paddlesYHeight {
+			l.ballDX *= -1
+
+			// modify angle depending on where the ball hits the paddle
+			ratio := (l.ballY - l.paddlesY) / paddlesYHeight
+			l.ballDY = ratio*4 - 2
+			log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
+
+			PlaySound(paddleOgg)
+		}
+	}
+
+	// ensure the ball speed is not too slow
+	for math.Abs(float64(l.ballDX))+math.Abs(float64(l.ballDY)) < l.minimumSpeed {
+		l.ballDX *= 1.1
+		l.ballDY *= 1.1
 	}
 }
 
@@ -211,12 +257,13 @@ func (l *LevelBricksHL) Initialize() {
 
 		l.paddlesX = screenWidth/2 - paddlesXWidth/2
 		l.paddlesY = screenHeight/2 - paddlesYHeight/2
-		l.ballX = screenWidth / 2
-		l.ballY = screenHeight / 3 * 2
-		l.ballDX = 0.1
-		l.ballDY = -2
+		l.ballY = float32(l.brickTop)
+		l.ballX = float32(l.brickLeft + (l.brickHeight * (l.numBrickRows / 2)))
+		l.ballDX = -2.0
+		l.ballDY = 0.1
 	}
 
+	l.minimumSpeed = 3.0
 	l.bricks = make([][]bool, l.numBrickRows)
 	for y := range l.bricks {
 		l.bricks[y] = make([]bool, l.numBrickCols)
@@ -281,9 +328,9 @@ func (l *LevelBricksHL) UpdatePaddlePositions() {
 		heldUp := ebiten.IsKeyPressed(ebiten.KeyK)
 		if heldDown || heldUp {
 			if heldDown && !heldUp {
-				l.paddlesY -= paddleSpeed
-			} else if !heldDown && heldUp {
 				l.paddlesY += paddleSpeed
+			} else if !heldDown && heldUp {
+				l.paddlesY -= paddleSpeed
 			}
 		}
 	}
