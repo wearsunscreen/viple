@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
@@ -27,8 +29,7 @@ type LevelBricksHL struct {
 	level        LevelID
 	numBrickRows int
 	numBrickCols int
-	paddleX      float32
-	paddleY      float32
+	paddleSouthX float32
 }
 
 // return true is any value in the 2D slice is true
@@ -56,8 +57,10 @@ func (l *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 	screen.Fill(darkCoal)
 
 	// Draw paddle
-	vector.DrawFilledRect(screen, l.paddleX, screenHeight-paddleHeight, paddleWidth, paddleHeight, lightAluminium, false)
-
+	vector.DrawFilledRect(screen, l.paddleSouthX, screenHeight-paddleHeight, paddleWidth, paddleHeight, lightAluminium, false)
+	if l.level == LevelIdBricksHJKL {
+		vector.DrawFilledRect(screen, l.paddleSouthX, 0, paddleWidth, paddleHeight, lightAluminium, false)
+	}
 	// Draw ball
 	vector.DrawFilledCircle(screen, l.ballX, l.ballY, ballRadius, lightAluminium, false)
 
@@ -85,11 +88,10 @@ func (l *LevelBricksHL) Initialize() {
 		l.brickWidth = screenWidth / l.numBrickCols
 		l.brickHeight = 50
 
-		l.paddleX = screenWidth/2 - paddleWidth/2
-		l.paddleY = screenHeight - paddleHeight
+		l.paddleSouthX = screenWidth/2 - paddleWidth/2
 		l.ballX = screenWidth / 2
 		l.ballY = screenHeight / 3 * 2
-		l.ballDX = 2
+		l.ballDX = 0.1
 		l.ballDY = -ballSpeedY
 	} else {
 		l.brickWidth = 50
@@ -99,12 +101,11 @@ func (l *LevelBricksHL) Initialize() {
 		l.brickLeft = (screenWidth - l.brickWidth*l.numBrickCols) / 2
 		l.brickTop = (screenHeight - l.brickHeight*l.numBrickRows) / 2
 
-		l.paddleX = screenWidth/2 - paddleWidth/2
-		l.paddleY = screenHeight - paddleHeight
+		l.paddleSouthX = screenWidth/2 - paddleWidth/2
 		l.ballX = screenWidth / 2
 		l.ballY = screenHeight / 3 * 2
-		l.ballDX = 2
-		l.ballDY = -ballSpeedY
+		l.ballDX = 0.1
+		l.ballDY = -2
 	}
 
 	l.bricks = make([][]bool, l.numBrickRows)
@@ -132,25 +133,31 @@ func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
 	heldRight := ebiten.IsKeyPressed(ebiten.KeyL)
 	if heldLeft || heldRight {
 		if heldLeft && !heldRight {
-			l.paddleX -= paddleSpeed
+			l.paddleSouthX -= paddleSpeed
 		} else if !heldLeft && heldRight {
-			l.paddleX += paddleSpeed
+			l.paddleSouthX += paddleSpeed
 		}
 	}
 
 	// Clamp paddle movement within screen bounds
-	if l.paddleX < 0 {
-		l.paddleX = 0
-	} else if l.paddleX > screenWidth-paddleWidth {
-		l.paddleX = screenWidth - paddleWidth
+	if l.paddleSouthX < 0 {
+		l.paddleSouthX = 0
+	} else if l.paddleSouthX > screenWidth-paddleWidth {
+		l.paddleSouthX = screenWidth - paddleWidth
 	}
 
 	// Check for wall collisions
-	if l.ballX < 0 || l.ballX > screenWidth-ballRadius {
-		l.ballDX *= -1
-	}
-	if l.ballY < 0 {
-		l.ballDY *= -1
+	if l.level == LevelIdBricksHL {
+		if l.ballX < 0 || l.ballX > screenWidth-ballRadius {
+			l.ballDX *= -1
+		}
+		if l.ballY < 0 {
+			l.ballDY *= -1
+		}
+	} else {
+		if l.ballX < 0 || l.ballX > screenWidth-ballRadius {
+			l.ballDX *= -1
+		}
 	}
 
 	// Check for ball off bottom of screen
@@ -158,17 +165,38 @@ func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
 		l.Initialize()
 	}
 
+	if l.level == LevelIdBricksHJKL {
+		// Check for ball off top of screen
+		if l.ballY+ballRadius < 0 {
+			l.Initialize()
+		}
+	}
+
 	// Check for paddle collision
 	if l.ballY+ballRadius > screenHeight-paddleHeight &&
-		l.ballX >= l.paddleX && l.ballX <= l.paddleX+paddleWidth {
+		l.ballX >= l.paddleSouthX && l.ballX <= l.paddleSouthX+paddleWidth {
 		l.ballDY *= -1
 
 		// modify angle depending on where the ball hits the paddle
-		ratio := (l.ballX - l.paddleX) / paddleWidth
+		ratio := (l.ballX - l.paddleSouthX) / paddleWidth
 		l.ballDX = ratio*4 - 2
-		//log.Printf("ratio %f, dx is %f", ratio, l.ballDX)
+		//log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
 
 		PlaySound(paddleOgg)
+	}
+
+	if l.level == LevelIdBricksHJKL {
+		if l.ballY-ballRadius < paddleHeight &&
+			l.ballX >= l.paddleSouthX && l.ballX <= l.paddleSouthX+paddleWidth {
+			l.ballDY *= -1
+
+			// modify angle depending on where the ball hits the paddle
+			ratio := (l.ballX - l.paddleSouthX) / paddleWidth
+			l.ballDX = ratio*4 - 2
+			log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
+
+			PlaySound(paddleOgg)
+		}
 	}
 
 	// Check for brick collision

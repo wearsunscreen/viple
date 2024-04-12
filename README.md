@@ -9,7 +9,8 @@ Copyright John Crane, 2024
 * The first swap will allow act like a swap if there are triples on the board even if the swap does not create a triple.
 
 ## To Do
-* Visual mode, let navigate to any square
+* add top left right paddles
+* bricks 1 and 2 using function pointers for polymorphism
 * Level description
 ** to introduce a level
 ** to congratulate completion of a level and game, options to repeat, go to next, go to main menu
