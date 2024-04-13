@@ -15,7 +15,7 @@ Copyright John Crane, 2024
 ** to introduce a level
 ** to congratulate completion of a level and game, options to repeat, go to next, go to main menu
 ** Main menu, lets you choose level
-* Level Two - h and v brick out 
+* move handling of : commands to shared location
 * Scaler to animate gems
 * Fader to animate disappearing gems, bricks
 * Flush keystrokes between levels
