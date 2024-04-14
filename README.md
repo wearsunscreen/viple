@@ -10,9 +10,9 @@ Copyright John Crane, 2024
 
 ## To Do
 * use a generic list - https://gobyexample.com/generics
-* flappybird clamp bird to screen
-* flappybird have its own rng to repeat level
-* flappy bird end level.
+* pufferfish clamp fish to screen
+* pufferfish have its own rng to repeat level
+* pufferfish end level.
 * bricks 1 and 2 using function pointers for polymorphism
 * Level description
 ** to introduce a level

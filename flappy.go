@@ -8,18 +8,18 @@ import (
 )
 
 const (
-	birdHeight   = 30
-	birdSpeed    = 3.0
-	birdWidth    = 30
-	birdX        = 150
+	fishHeight   = 30
+	fishSpeed    = 3.0
+	fishWidth    = 30
+	fishX        = 150
 	gapHeight    = 100
 	pipeWidth    = 60
 	pipeInterval = 5 * 60
 )
 
 type LevelFlappy struct {
-	birdColor     color.RGBA
-	birdY         float32
+	fishColor     color.RGBA
+	fishY         float32
 	pipeColor     color.RGBA
 	pipes         []*Pipe
 	startingFrame int
@@ -35,8 +35,8 @@ func (l *LevelFlappy) Draw(screen *ebiten.Image, frameCount int) {
 	// Draw background
 	screen.Fill(mediumSkyBlue)
 
-	// Draw bird
-	vector.DrawFilledRect(screen, birdX, l.birdY, birdHeight, birdWidth, l.birdColor, false)
+	// Draw fish
+	vector.DrawFilledRect(screen, fishX, l.fishY, fishHeight, fishWidth, l.fishColor, false)
 
 	// top pipe
 	for _, p := range l.pipes {
@@ -46,8 +46,8 @@ func (l *LevelFlappy) Draw(screen *ebiten.Image, frameCount int) {
 }
 
 func (l *LevelFlappy) Initialize() {
-	l.birdY = screenHeight / 2
-	l.birdColor = mediumButter
+	l.fishY = screenHeight / 2
+	l.fishColor = mediumButter
 	l.pipeColor = darkAluminium
 	l.startingFrame = 0
 }
@@ -69,11 +69,11 @@ func (l *LevelFlappy) Update(frameCount int) (bool, error) {
 	heldUp := ebiten.IsKeyPressed(ebiten.KeyK)
 	if heldDown || heldUp {
 		if heldDown && !heldUp {
-			l.birdY += birdSpeed
+			l.fishY += fishSpeed
 		} else if !heldDown && heldUp {
-			l.birdY -= birdSpeed
+			l.fishY -= fishSpeed
 		}
-		l.birdY = limitToRange(l.birdY, screenHeight-birdHeight)
+		l.fishY = limitToRange(l.fishY, screenHeight-fishHeight)
 	}
 
 	// move pipes forward
