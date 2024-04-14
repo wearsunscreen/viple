@@ -9,7 +9,9 @@ Copyright John Crane, 2024
 * The first swap will allow act like a swap if there are triples on the board even if the swap does not create a triple.
 
 ## To Do
-* flappybird for level 2
+* flappybird clamp bird to screen
+* flappybird have its own rng to repeat level
+* flappy bird end level.
 * bricks 1 and 2 using function pointers for polymorphism
 * Level description
 ** to introduce a level
@@ -20,3 +22,4 @@ Copyright John Crane, 2024
 * Fader to animate disappearing gems, bricks
 * Flush keystrokes between levels
 * Deploy as Open Source?
+* deploy as web page
