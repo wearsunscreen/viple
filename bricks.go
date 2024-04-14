@@ -293,20 +293,10 @@ func (l *LevelBricksHL) UpdateBallPosition() {
 		l.ballY += l.ballDY
 	}
 
-	// Clamp paddle movement within screen bounds
-	if l.paddlesX < 0 {
-		l.paddlesX = 0
-	} else if l.paddlesX > screenWidth-paddlesXWidth {
-		l.paddlesX = screenWidth - paddlesXWidth
-	}
-
+	// limit paddle movement within screen bounds
+	l.paddlesX = limitToRange(l.paddlesX, screenWidth-paddlesXWidth)
 	if l.level == LevelIdBricksHJKL {
-		// Clamp paddle movement within screen bounds
-		if l.paddlesY < 0 {
-			l.paddlesY = 0
-		} else if l.paddlesY > screenHeight-paddlesYHeight {
-			l.paddlesY = screenHeight - paddlesYHeight
-		}
+		l.paddlesY = limitToRange(l.paddlesY, screenHeight-paddlesYHeight)
 	}
 }
 

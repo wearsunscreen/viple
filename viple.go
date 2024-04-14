@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/exp/constraints"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -47,6 +49,10 @@ type Game struct {
 	levelJK      LevelFlappy
 	levelVM      LevelGemsVisualMode
 	currentLevel LevelID
+}
+
+type Number interface {
+	constraints.Integer | constraints.Float
 }
 
 func main() {
@@ -97,6 +103,16 @@ func fillSlice[T any](s []T, value T) []T {
 
 func gameDimensions() (width int, height int) {
 	return screenWidth, screenHeight
+}
+
+func limitToRange[T Number](input, max T) (output T) {
+	output = input
+	if input < 0 {
+		output = 0
+	} else if input > max {
+		output = max
+	}
+	return output
 }
 
 func loadImage(path string) *ebiten.Image {

@@ -73,6 +73,7 @@ func (l *LevelFlappy) Update(frameCount int) (bool, error) {
 		} else if !heldDown && heldUp {
 			l.birdY -= birdSpeed
 		}
+		l.birdY = limitToRange(l.birdY, screenHeight-birdHeight)
 	}
 
 	// move pipes forward
