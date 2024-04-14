@@ -258,7 +258,7 @@ func (l *LevelBricksHL) Initialize() {
 }
 
 func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
-	if l.CheckForCheatKey() {
+	if IsCheatKeyPressed() {
 		return true, nil
 	}
 	l.UpdateBallPosition()

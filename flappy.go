@@ -63,7 +63,7 @@ func (l *LevelFlappy) Update(frameCount int) (bool, error) {
 	if (frameCount+pipeInterval)%pipeInterval == 0 {
 		p := new(Pipe)
 		p.startingFrame = frameCount
-		p.gapY = float32(rng.Intn(screenHeight - (gapHeight / 2) + gapHeight/4))
+		p.gapY = float32(rng.Intn(screenHeight-(gapHeight/2)) + gapHeight/4)
 		p.x = screenWidth
 		l.pipes = append(l.pipes, p)
 	}
