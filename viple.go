@@ -12,6 +12,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 const (
@@ -66,6 +67,13 @@ func main() {
 	if err := ebiten.RunGame(newGame()); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func IsCheatKeyPressed() bool {
+	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
+		return true
+	}
+	return false
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {

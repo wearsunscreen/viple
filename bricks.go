@@ -96,20 +96,6 @@ func (l *LevelBricksHL) CheckBrickCollisions() {
 	}
 }
 
-func (l *LevelBricksHL) CheckForCheatKey() {
-	// cheat to complete level
-	cheatKey := ebiten.KeyA
-	if l.level == LevelIdBricksHJKL {
-		cheatKey = ebiten.KeyB
-	}
-	if ebiten.IsKeyPressed(cheatKey) {
-		for y := range l.bricks {
-			l.bricks[y] = make([]bool, l.numBrickCols)
-			fillSlice(l.bricks[y], false)
-		}
-	}
-}
-
 func (l *LevelBricksHL) CheckPaddleCollisions() {
 	// Check for bottom paddle collision
 	if l.ballY+ballRadius > screenHeight-paddlesXHeight &&
@@ -272,7 +258,9 @@ func (l *LevelBricksHL) Initialize() {
 }
 
 func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
-	l.CheckForCheatKey()
+	if l.CheckForCheatKey() {
+		return true, nil
+	}
 	l.UpdateBallPosition()
 	l.UpdatePaddlePositions()
 	l.CheckWallCollisions()

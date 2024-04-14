@@ -53,6 +53,10 @@ func (l *LevelFlappy) Initialize() {
 }
 
 func (l *LevelFlappy) Update(frameCount int) (bool, error) {
+	if IsCheatKeyPressed() {
+		return true, nil
+	}
+
 	if l.startingFrame == 0 {
 		l.startingFrame = frameCount
 	}

@@ -145,11 +145,8 @@ func (level *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 			}
 		}
 		// cheat code to fill
-		if ebiten.IsKeyPressed(ebiten.KeyZ) {
-			for y := range level.triplesMask {
-				level.triplesMask[y] = make([]bool, numGemColumns)
-				fillSlice(level.triplesMask[y], true)
-			}
+		if IsCheatKeyPressed() {
+			return true, nil
 		}
 	}
 
