@@ -118,7 +118,7 @@ func (l *LevelGemsVisualMode) Initialize() {
 	l.mode = NormalMode
 	fillRandom(l)
 
-	loadGems(l)
+	l.loadGems()
 }
 
 func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
@@ -145,12 +145,12 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 			}
 		}
 		// cheat code to fill
-		if IsCheatKeyPressed() {
+		if isCheatKeyPressed() {
 			return true, nil
 		}
 	}
 
-	if gameIsWon(l) {
+	if l.gameIsWon() {
 		return true, nil
 	}
 	return false, nil
@@ -394,7 +394,7 @@ func highLow(p1, p2 Point) (Point, Point) {
 	}
 }
 
-func gameIsWon(l *LevelGemsVisualMode) bool {
+func (l *LevelGemsVisualMode) gameIsWon() bool {
 	for y, row := range l.gemGrid {
 		for x := range row {
 			if !l.triplesMask[y][x] {
@@ -405,7 +405,7 @@ func gameIsWon(l *LevelGemsVisualMode) bool {
 	return true
 }
 
-func loadGems(l *LevelGemsVisualMode) {
+func (l *LevelGemsVisualMode) loadGems() {
 	if len(l.gemImages) == 0 {
 		l.gemImages = make([]*ebiten.Image, l.numGems)
 		for i := range l.numGems {
@@ -482,7 +482,7 @@ func updateTriples(l *LevelGemsVisualMode, frameCount int) {
 				}
 			}
 		}
-		if gameIsWon(l) {
+		if l.gameIsWon() {
 			PlaySound(winOgg)
 		} else {
 			PlaySound(tripleOgg)

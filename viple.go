@@ -69,7 +69,7 @@ func main() {
 	}
 }
 
-func IsCheatKeyPressed() bool {
+func isCheatKeyPressed() bool {
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		return true
 	}
@@ -113,12 +113,12 @@ func gameDimensions() (width int, height int) {
 	return screenWidth, screenHeight
 }
 
-func limitToRange[T Number](input, max T) (output T) {
+func limitToRange[T Number](input, low, high T) (output T) {
 	output = input
-	if input < 0 {
-		output = 0
-	} else if input > max {
-		output = max
+	if input < low {
+		output = low
+	} else if input > high {
+		output = high
 	}
 	return output
 }

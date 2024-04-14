@@ -9,79 +9,96 @@ import (
 
 const (
 	fishHeight   = 60
+	fishRadius   = (fishHeight / 2) - 5
 	fishScale    = 1.0
 	fishSpeed    = 3.0
 	fishWidth    = 60
 	fishX        = 150
 	gapHeight    = 100
+	lastPipe     = 3
 	pipeWidth    = 60
 	pipeInterval = 5 * 60
 )
 
+var (
+	colorPipe           = darkAluminium
+	colorPastPipe       = mediumGreen
+	colorHitPipe        = mediumScarletRed
+	colorInivisiblePipe = mediumSkyBlue
+)
+
 type LevelFlappy struct {
-	fishColor     color.RGBA
+	numPipesPast  int
 	fishImage     *ebiten.Image
 	fishY         float32
-	pipeColor     color.RGBA
 	pipes         []*Pipe
 	startingFrame int
 }
 
 type Pipe struct {
+	color         color.RGBA
+	completed     bool
 	gapY          float32
 	startingFrame int
 	x             float32
+}
+
+func (l *LevelFlappy) addPipe(frameCount int) {
+	if l.numPipesPast <= lastPipe {
+		p := new(Pipe)
+		p.startingFrame = frameCount
+		p.gapY = float32(rng.Intn(screenHeight-(fishHeight*2)) + fishHeight/2)
+		p.x = screenWidth
+		l.pipes = append(l.pipes, p)
+		p.color = colorPipe
+		p.completed = false
+	}
+}
+
+func (l *LevelFlappy) gameIsWon() bool {
+	return l.numPipesPast > lastPipe
+}
+
+func (l *LevelFlappy) CheckPipeCollisions() {
+	for _, p := range l.pipes {
+		if fishX+fishRadius > p.x && fishX-fishRadius < p.x+pipeWidth {
+			if l.fishY-fishRadius < p.gapY || l.fishY+fishRadius > p.gapY+gapHeight {
+				p.color = darkScarletRed
+				l.numPipesPast = 0
+			}
+		}
+	}
 }
 
 func (l *LevelFlappy) Draw(screen *ebiten.Image, frameCount int) {
 	// Draw background
 	screen.Fill(mediumSkyBlue)
 
-	// Draw fish
-	vector.DrawFilledRect(screen, fishX-fishWidth/2, l.fishY-fishHeight/2, fishHeight, fishWidth, l.fishColor, false)
-
 	// top pipe
 	for _, p := range l.pipes {
-		vector.DrawFilledRect(screen, p.x, 0, pipeWidth, p.gapY, l.pipeColor, false)
-		vector.DrawFilledRect(screen, p.x, p.gapY+gapHeight, pipeWidth, screenHeight-p.gapY+gapHeight, l.pipeColor, false)
+		vector.DrawFilledRect(screen, p.x, 0, pipeWidth, p.gapY, p.color, false)
+		vector.DrawFilledRect(screen, p.x, p.gapY+gapHeight, pipeWidth, screenHeight-p.gapY+gapHeight, p.color, false)
 	}
-	// draw fish
+
+	// Draw fish
+	//vector.DrawFilledRect(screen, fishX-fishWidth/2, l.fishY-fishHeight/2, fishHeight, fishWidth, l.fishColor, false)
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(fishScale, fishScale)
 	op.GeoM.Translate(fishX-fishWidth/2, float64(l.fishY)-fishHeight/2)
-	op.GeoM.Translate(0, 0)
 	screen.DrawImage(l.fishImage, op)
-
 }
 
 func (l *LevelFlappy) Initialize() {
 	l.fishY = screenHeight / 2
-	l.fishColor = mediumButter
-	l.pipeColor = darkAluminium
 	l.startingFrame = 0
+	l.numPipesPast = 0
 	if l.fishImage == nil {
 		l.fishImage = loadImage("resources/pufferfish80.png")
-
 	}
 }
 
-func (l *LevelFlappy) Update(frameCount int) (bool, error) {
-	if IsCheatKeyPressed() {
-		return true, nil
-	}
-
-	if l.startingFrame == 0 {
-		l.startingFrame = frameCount
-	}
-	if (frameCount+pipeInterval)%pipeInterval == 0 {
-		p := new(Pipe)
-		p.startingFrame = frameCount
-		p.gapY = float32(rng.Intn(screenHeight-(fishHeight*2)) + fishHeight/2)
-		p.x = screenWidth
-		l.pipes = append(l.pipes, p)
-	}
-
-	// Update paddle vertical position based on keyboard input
+func (l *LevelFlappy) updateFish() {
+	// Update vertical position based on keyboard input
 	heldDown := ebiten.IsKeyPressed(ebiten.KeyJ)
 	heldUp := ebiten.IsKeyPressed(ebiten.KeyK)
 	if heldDown || heldUp {
@@ -90,12 +107,26 @@ func (l *LevelFlappy) Update(frameCount int) (bool, error) {
 		} else if !heldDown && heldUp {
 			l.fishY -= fishSpeed
 		}
-		l.fishY = limitToRange(l.fishY, screenHeight-fishHeight/2)
+		l.fishY = limitToRange(l.fishY, fishHeight/2, screenHeight-fishHeight/2)
+	}
+}
+
+func (l *LevelFlappy) updatePipes(frameCount int) {
+	if l.startingFrame == 0 {
+		l.startingFrame = frameCount
+		l.addPipe(frameCount)
+	}
+	if (frameCount+pipeInterval)%pipeInterval == 0 {
+		l.addPipe(frameCount)
 	}
 
 	// move pipes forward
 	for _, p := range l.pipes {
 		p.x -= 1
+		if p.x < fishX && p.color == colorPipe {
+			l.numPipesPast += 1
+			p.color = colorPastPipe
+		}
 	}
 
 	// remove pipe that are off screen
@@ -106,6 +137,20 @@ func (l *LevelFlappy) Update(frameCount int) (bool, error) {
 		}
 	}
 	l.pipes = newSlice
+}
+
+func (l *LevelFlappy) Update(frameCount int) (bool, error) {
+	if isCheatKeyPressed() {
+		return true, nil
+	}
+
+	if l.gameIsWon() {
+		return true, nil
+	}
+
+	l.updateFish()
+	l.updatePipes(frameCount)
+	l.CheckPipeCollisions()
 
 	return false, nil
 }

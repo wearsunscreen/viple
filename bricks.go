@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -119,7 +118,7 @@ func (l *LevelBricksHL) CheckPaddleCollisions() {
 			// modify angle depending on where the ball hits the paddle
 			ratio := (l.ballX - l.paddlesX) / paddlesXWidth
 			l.ballDX = ratio*4 - 2
-			log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
+			//log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
 
 			PlaySound(paddleOgg)
 		}
@@ -132,7 +131,7 @@ func (l *LevelBricksHL) CheckPaddleCollisions() {
 			// modify angle depending on where the ball hits the paddle
 			ratio := (l.ballY - l.paddlesY) / paddlesYHeight
 			l.ballDY = ratio*4 - 2
-			log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
+			//log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
 
 			PlaySound(paddleOgg)
 		}
@@ -145,16 +144,18 @@ func (l *LevelBricksHL) CheckPaddleCollisions() {
 			// modify angle depending on where the ball hits the paddle
 			ratio := (l.ballY - l.paddlesY) / paddlesYHeight
 			l.ballDY = ratio*4 - 2
-			log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
+			//log.Printf("ratio %f, dx is %f, dy is %f", ratio, l.ballDX, l.ballDY)
 
 			PlaySound(paddleOgg)
 		}
 	}
 
-	// ensure the ball speed is not too slow
-	for math.Abs(float64(l.ballDX))+math.Abs(float64(l.ballDY)) < l.minimumSpeed {
-		l.ballDX *= 1.1
-		l.ballDY *= 1.1
+	if l.ballDX != 0.0 {
+		// ensure the ball speed is not too slow
+		for math.Abs(float64(l.ballDX))+math.Abs(float64(l.ballDY)) < l.minimumSpeed {
+			l.ballDX *= 1.1
+			l.ballDY *= 1.1
+		}
 	}
 }
 
@@ -219,6 +220,19 @@ func (l *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 	}
 }
 
+func (l *LevelBricksHL) initBallMovement() {
+	if l.ballDX == 0 {
+		if l.level == LevelIdBricksHL {
+			l.ballDX = 0.1
+			l.ballDY = -ballSpeedY
+		} else {
+			l.ballDX = -2.0
+			l.ballDY = 0.1
+
+		}
+	}
+}
+
 func (l *LevelBricksHL) Initialize() {
 	if l.level == LevelIdBricksHL {
 		l.numBrickRows = 3
@@ -231,8 +245,6 @@ func (l *LevelBricksHL) Initialize() {
 		l.paddlesX = screenWidth/2 - paddlesXWidth/2
 		l.ballX = screenWidth / 2
 		l.ballY = screenHeight / 3 * 2
-		l.ballDX = 0.1
-		l.ballDY = -ballSpeedY
 	} else {
 		l.brickWidth = 50
 		l.brickHeight = 50
@@ -243,12 +255,12 @@ func (l *LevelBricksHL) Initialize() {
 
 		l.paddlesX = screenWidth/2 - paddlesXWidth/2
 		l.paddlesY = screenHeight/2 - paddlesYHeight/2
-		l.ballY = float32(l.brickTop)
+		l.ballY = float32(l.brickTop) - ballRadius
 		l.ballX = float32(l.brickLeft + (l.brickHeight * (l.numBrickRows / 2)))
-		l.ballDX = -2.0
-		l.ballDY = 0.1
 	}
 
+	l.ballDX = 0
+	l.ballDY = 0
 	l.minimumSpeed = 3.0
 	l.bricks = make([][]bool, l.numBrickRows)
 	for y := range l.bricks {
@@ -258,7 +270,7 @@ func (l *LevelBricksHL) Initialize() {
 }
 
 func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
-	if IsCheatKeyPressed() {
+	if isCheatKeyPressed() {
 		return true, nil
 	}
 	l.UpdateBallPosition()
@@ -280,12 +292,6 @@ func (l *LevelBricksHL) UpdateBallPosition() {
 		l.ballX += l.ballDX
 		l.ballY += l.ballDY
 	}
-
-	// limit paddle movement within screen bounds
-	l.paddlesX = limitToRange(l.paddlesX, screenWidth-paddlesXWidth)
-	if l.level == LevelIdBricksHJKL {
-		l.paddlesY = limitToRange(l.paddlesY, screenHeight-paddlesYHeight)
-	}
 }
 
 func (l *LevelBricksHL) UpdatePaddlePositions() {
@@ -298,6 +304,9 @@ func (l *LevelBricksHL) UpdatePaddlePositions() {
 		} else if !heldLeft && heldRight {
 			l.paddlesX += paddleSpeed
 		}
+
+		// the level waits for the first paddle move before starting the ball
+		l.initBallMovement()
 	}
 
 	if l.level == LevelIdBricksHJKL {
@@ -310,6 +319,13 @@ func (l *LevelBricksHL) UpdatePaddlePositions() {
 			} else if !heldDown && heldUp {
 				l.paddlesY -= paddleSpeed
 			}
+			l.initBallMovement()
 		}
 	}
+	// limit paddle movement within screen bounds
+	l.paddlesX = limitToRange(l.paddlesX, 0, screenWidth-paddlesXWidth)
+	if l.level == LevelIdBricksHJKL {
+		l.paddlesY = limitToRange(l.paddlesY, 0, screenHeight-paddlesYHeight)
+	}
+
 }
