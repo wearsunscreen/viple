@@ -11,8 +11,11 @@ Copyright John Crane, 2024
 ## To Do
 * snake level
 * Level description
+* split into modules
 * use a generic list - https://gobyexample.com/generics
-* delete lines in gems
+* use composition to define levels https://www.tutorialspoint.com/composition-in-golang
+** each level would contain a Drawer, Updater, Initializer, StartInformer, StartEnder
+* level to teach delete lines in gems
 * cut and paste lines in gems
 * maki game and word advance
 * brickout where you switch side with paddle using page up, page down commands

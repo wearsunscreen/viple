@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"image/color"
 	_ "image/png"
 	"log"
 	"math/rand"
@@ -9,6 +10,11 @@ import (
 	"time"
 
 	"golang.org/x/exp/constraints"
+	"golang.org/x/image/font/gofont/goregular"
+
+	"github.com/ebitenui/ebitenui"
+	"github.com/ebitenui/ebitenui/widget"
+	"github.com/golang/freetype/truetype"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -45,11 +51,12 @@ var (
 )
 
 type Game struct {
+	currentLevel LevelID
 	frameCount   int
 	levelHL      LevelBricksHL
 	levelJK      LevelFlappy
 	levelVM      LevelGemsVisualMode
-	currentLevel LevelID
+	ui           *ebitenui.UI
 }
 
 type Number interface {
@@ -64,16 +71,22 @@ func main() {
 
 	ebiten.SetWindowSize(gameDimensions())
 	ebiten.SetWindowTitle(version)
+
 	if err := ebiten.RunGame(newGame()); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func isCheatKeyPressed() bool {
-	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
-		return true
+// function to fill slice of any type
+func fillSlice[T any](s []T, value T) []T {
+	if s == nil {
+		panic("slice cannot be nil")
 	}
-	return false
+
+	for i := range s {
+		s[i] = value
+	}
+	return s
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -90,6 +103,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	default:
 		panic("Unknown game level " + strconv.Itoa(int(g.currentLevel)))
 	}
+
+	// the UI
+	g.ui.Draw(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -97,63 +113,12 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return w, h
 }
 
-// function to fill slice of any type
-func fillSlice[T any](s []T, value T) []T {
-	if s == nil {
-		panic("slice cannot be nil")
-	}
-
-	for i := range s {
-		s[i] = value
-	}
-	return s
-}
-
-func gameDimensions() (width int, height int) {
-	return screenWidth, screenHeight
-}
-
-func limitToRange[T Number](input, low, high T) (output T) {
-	output = input
-	if input < low {
-		output = low
-	} else if input > high {
-		output = high
-	}
-	return output
-}
-
-func loadImage(path string) *ebiten.Image {
-	image, _, err := ebitenutil.NewImageFromFile(path)
-	if err != nil {
-		log.Fatalf("Error loading image: %v", err)
-	}
-	return image
-}
-
-func newGame() *Game {
-	g := Game{}
-
-	g.levelHL.Initialize()
-	g.levelJK.Initialize()
-	g.levelVM.Initialize()
-	g.currentLevel = LevelIdBricksHL
-
-	return &g
-}
-
-func seedRNG(seed int64) {
-	if seed == 0 {
-		seed = time.Now().UnixNano() % 10000
-	}
-	log.Println("Random seed is ", seed)
-	rng = rand.New(rand.NewSource(seed))
-}
-
 func (g *Game) Update() error {
-	g.frameCount++
+	g.ui.Update()
+
 	var levelOver bool
 	var err error
+	g.frameCount++
 	switch g.currentLevel {
 	case LevelIdBricksHL:
 		levelOver, err = g.levelHL.Update(g.frameCount)
@@ -180,7 +145,82 @@ func (g *Game) Update() error {
 		case LevelIdGemsVM:
 			g.levelVM.Initialize()
 		}
-
 	}
 	return err
+}
+
+func gameDimensions() (width int, height int) {
+	return screenWidth, screenHeight
+}
+
+func isCheatKeyPressed() bool {
+	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
+		return true
+	}
+	return false
+}
+
+func limitToRange[T Number](input, low, high T) (output T) {
+	output = input
+	if input < low {
+		output = low
+	} else if input > high {
+		output = high
+	}
+	return output
+}
+
+func loadImage(path string) *ebiten.Image {
+	image, _, err := ebitenutil.NewImageFromFile(path)
+	if err != nil {
+		log.Fatalf("Error loading image: %v", err)
+	}
+	return image
+}
+
+func newGame() *Game {
+	// This creates the root container for this UI.
+	// All other UI elements must be added to this container.
+	rootContainer := widget.NewContainer()
+
+	// This adds the root container to the UI, so that it will be rendered.
+	eui := &ebitenui.UI{
+		Container: rootContainer,
+	}
+
+	// This loads a font and creates a font face.
+	ttfFont, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		log.Fatal("Error Parsing Font", err)
+	}
+	fontFace := truetype.NewFace(ttfFont, &truetype.Options{
+		Size: 32,
+	})
+
+	// This creates a text widget that says "Hello World!"
+	helloWorldLabel := widget.NewText(
+		widget.TextOpts.Text("Hello World!", fontFace, color.White),
+	)
+
+	// To display the text widget, we have to add it to the root container.
+	rootContainer.AddChild(helloWorldLabel)
+
+	g := Game{
+		ui: eui,
+	}
+
+	g.levelHL.Initialize()
+	g.levelJK.Initialize()
+	g.levelVM.Initialize()
+	g.currentLevel = LevelIdBricksHL
+
+	return &g
+}
+
+func seedRNG(seed int64) {
+	if seed == 0 {
+		seed = time.Now().UnixNano() % 10000
+	}
+	log.Println("Random seed is ", seed)
+	rng = rand.New(rand.NewSource(seed))
 }
