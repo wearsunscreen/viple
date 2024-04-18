@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 
 	"github.com/ebitenui/ebitenui"
+	"github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/golang/freetype/truetype"
 
@@ -181,6 +183,26 @@ func loadImage(path string) *ebiten.Image {
 func closeUI(res *uiResources) {
 	res.close()
 }
+func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateableWidget {
+	c := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
+			widget.RowLayoutOpts.Padding(widget.Insets{
+				Top:    20,
+				Bottom: 20,
+			}))),
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(ld)))
+
+	c.AddChild(widget.NewGraphic(
+		widget.GraphicOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Stretch:   true,
+			MaxHeight: 2,
+		})),
+		widget.GraphicOpts.ImageNineSlice(image.NewNineSliceColor(res.separatorColor)),
+	))
+
+	return c
+}
 
 func newGame() *Game {
 	res, err := newUIResources()
@@ -230,6 +252,22 @@ func newGame() *Game {
 
 	// To display the text widget, we have to add it to the root container.
 	rootContainer.AddChild(helloWorldLabel)
+
+	rootContainer.AddChild(newSeparator(res, widget.RowLayoutData{
+		Stretch: true,
+	}))
+
+	b := widget.NewButton(
+		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Stretch: true,
+		})),
+		widget.ButtonOpts.Image(res.button.image),
+		widget.ButtonOpts.Text("Button", res.button.face, res.button.text),
+		widget.ButtonOpts.TextPadding(res.button.padding),
+		widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
+		widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
+	)
+	rootContainer.AddChild(b)
 
 	g := Game{
 		ui: ui,
