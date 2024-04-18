@@ -178,15 +178,41 @@ func loadImage(path string) *ebiten.Image {
 	return image
 }
 
+func closeUI(res *uiResources) {
+	res.close()
+}
+
 func newGame() *Game {
-	// This creates the root container for this UI.
-	// All other UI elements must be added to this container.
-	rootContainer := widget.NewContainer()
+	res, err := newUIResources()
+	if err != nil {
+		return nil
+	}
+
+	//This creates the root container for this UI.
+	rootContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			// It is using a GridLayout with a single column
+			widget.GridLayoutOpts.Columns(1),
+			// It uses the Stretch parameter to define how the rows will be layed out.
+			// - a fixed sized header
+			// - a content row that stretches to fill all remaining space
+			// - a fixed sized footer
+			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}),
+			// Padding defines how much space to put around the outside of the grid.
+			widget.GridLayoutOpts.Padding(widget.Insets{
+				Top:    20,
+				Bottom: 20,
+			}),
+			// Spacing defines how much space to put between each column and row
+			widget.GridLayoutOpts.Spacing(0, 20))),
+		widget.ContainerOpts.BackgroundImage(res.background))
 
 	// This adds the root container to the UI, so that it will be rendered.
-	eui := &ebitenui.UI{
+	ui := &ebitenui.UI{
 		Container: rootContainer,
 	}
+
+	defer closeUI(res)
 
 	// This loads a font and creates a font face.
 	ttfFont, err := truetype.Parse(goregular.TTF)
@@ -206,7 +232,7 @@ func newGame() *Game {
 	rootContainer.AddChild(helloWorldLabel)
 
 	g := Game{
-		ui: eui,
+		ui: ui,
 	}
 
 	g.levelHL.Initialize()
