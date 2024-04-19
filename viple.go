@@ -74,6 +74,7 @@ type Game struct {
 	levelHL      LevelBricksHL
 	levelJK      LevelFlappy
 	levelVM      LevelGemsVisualMode
+	showUI       bool
 	ui           *ebitenui.UI
 }
 
@@ -95,18 +96,6 @@ func main() {
 	}
 }
 
-// function to fill slice of any type
-func fillSlice[T any](s []T, value T) []T {
-	if s == nil {
-		panic("slice cannot be nil")
-	}
-
-	for i := range s {
-		s[i] = value
-	}
-	return s
-}
-
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
 	switch g.currentLevel {
@@ -123,7 +112,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// the UI
-	g.ui.Draw(screen)
+	if g.showUI {
+		g.ui.Draw(screen)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -132,43 +123,63 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func (g *Game) Update() error {
-	g.ui.Update()
 
 	var levelOver bool
 	var err error
 	g.frameCount++
-	switch g.currentLevel {
-	case LevelIdBricksHL:
-		levelOver, err = g.levelHL.Update(g.frameCount)
-	case LevelIdBricksHJKL:
-		levelOver, err = g.levelHL.Update(g.frameCount)
-	case LevelIdFlappy:
-		levelOver, err = g.levelJK.Update(g.frameCount)
-	case LevelIdGemsVM:
-		levelOver, err = g.levelVM.Update(g.frameCount)
-	}
-	if levelOver {
-		// advance to next Level if current level has been won
-		// bugbug: we don't handle completing the last level cleanly
-		g.currentLevel += 1
 
+	if g.showUI {
+		g.ui.Update()
+	} else {
 		switch g.currentLevel {
 		case LevelIdBricksHL:
-			g.levelHL.Initialize()
+			levelOver, err = g.levelHL.Update(g.frameCount)
 		case LevelIdBricksHJKL:
-			g.levelHL.level = g.currentLevel
-			g.levelHL.Initialize()
+			levelOver, err = g.levelHL.Update(g.frameCount)
 		case LevelIdFlappy:
-			g.levelJK.Initialize()
+			levelOver, err = g.levelJK.Update(g.frameCount)
 		case LevelIdGemsVM:
-			g.levelVM.Initialize()
+			levelOver, err = g.levelVM.Update(g.frameCount)
+		}
+		if levelOver {
+			// advance to next Level if current level has been won
+			// bugbug: we don't handle completing the last level cleanly
+			g.currentLevel += 1
+
+			switch g.currentLevel {
+			case LevelIdBricksHL:
+				g.levelHL.Initialize()
+			case LevelIdBricksHJKL:
+				g.levelHL.level = g.currentLevel
+				g.levelHL.Initialize()
+			case LevelIdFlappy:
+				g.levelJK.Initialize()
+			case LevelIdGemsVM:
+				g.levelVM.Initialize()
+			}
 		}
 	}
 	return err
 }
 
+// function to fill slice of any type
+func fillSlice[T any](s []T, value T) []T {
+	if s == nil {
+		panic("slice cannot be nil")
+	}
+
+	for i := range s {
+		s[i] = value
+	}
+	return s
+}
+
 func gameDimensions() (width int, height int) {
 	return screenWidth, screenHeight
+}
+
+func hideUI(g *Game) {
+	g.showUI = false
 }
 
 func isCheatKeyPressed() bool {
@@ -221,6 +232,14 @@ func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateab
 }
 
 func newGame() *Game {
+	g := Game{}
+
+	g.showUI = true
+	g.levelHL.Initialize()
+	g.levelJK.Initialize()
+	g.levelVM.Initialize()
+	g.currentLevel = LevelIdBricksHL
+
 	res, err := newUIResources()
 	if err != nil {
 		return nil
@@ -250,6 +269,7 @@ func newGame() *Game {
 	ui := &ebitenui.UI{
 		Container: rootContainer,
 	}
+	g.ui = ui
 
 	defer closeUI(res)
 
@@ -293,17 +313,12 @@ func newGame() *Game {
 		widget.ButtonOpts.TextPadding(res.button.padding),
 		widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
 		widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
+		// add a handler that reacts to clicking the button
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			hideUI(&g)
+		}),
 	)
 	innerContainer.AddChild(b)
-
-	g := Game{
-		ui: ui,
-	}
-
-	g.levelHL.Initialize()
-	g.levelJK.Initialize()
-	g.levelVM.Initialize()
-	g.currentLevel = LevelIdBricksHL
 
 	return &g
 }
