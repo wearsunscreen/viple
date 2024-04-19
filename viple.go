@@ -29,6 +29,22 @@ const (
 	version      = "Viple 0.1"
 )
 
+type DialogText struct {
+	title string
+	intro string
+	outro string
+}
+
+var Level1Dialog = DialogText{
+	`Welcome to Viple
+VI Play to Learn. `,
+	`In the first level you will 
+learn to move left and right 
+by pressing H and K keys.`,
+	`Congrats, you're ready to 
+move onto the next level`,
+}
+
 type Level interface {
 	Draw(screen *ebiten.Image, frameCount int)
 	Initialize()
@@ -210,32 +226,6 @@ func newGame() *Game {
 		return nil
 	}
 
-	//This creates the root container for this UI.
-	rootContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewGridLayout(
-			// It is using a GridLayout with a single column
-			widget.GridLayoutOpts.Columns(1),
-			// It uses the Stretch parameter to define how the rows will be layed out.
-			// - a fixed sized header
-			// - a content row that stretches to fill all remaining space
-			// - a fixed sized footer
-			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}),
-			// Padding defines how much space to put around the outside of the grid.
-			widget.GridLayoutOpts.Padding(widget.Insets{
-				Top:    20,
-				Bottom: 20,
-			}),
-			// Spacing defines how much space to put between each column and row
-			widget.GridLayoutOpts.Spacing(0, 20))),
-		widget.ContainerOpts.BackgroundImage(res.background))
-
-	// This adds the root container to the UI, so that it will be rendered.
-	ui := &ebitenui.UI{
-		Container: rootContainer,
-	}
-
-	defer closeUI(res)
-
 	// This loads a font and creates a font face.
 	ttfFont, err := truetype.Parse(goregular.TTF)
 	if err != nil {
@@ -245,15 +235,52 @@ func newGame() *Game {
 		Size: 32,
 	})
 
-	// This creates a text widget that says "Hello World!"
-	helloWorldLabel := widget.NewText(
-		widget.TextOpts.Text("Hello World!", fontFace, color.White),
+	//This creates the root container for this UI.
+	rootContainer := widget.NewContainer(
+		// the container will use a plain color as its background
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.NRGBA{0x13, 0x1a, 0x22, 0x80})),
+		// the container will use an anchor layout to layout its single child widget
+		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
+			//Set how much padding before displaying content
+			widget.AnchorLayoutOpts.Padding(widget.NewInsetsSimple(100)),
+		)),
 	)
 
-	// To display the text widget, we have to add it to the root container.
-	rootContainer.AddChild(helloWorldLabel)
+	// This adds the root container to the UI, so that it will be rendered.
+	ui := &ebitenui.UI{
+		Container: rootContainer,
+	}
 
-	rootContainer.AddChild(newSeparator(res, widget.RowLayoutData{
+	defer closeUI(res)
+
+	innerContainer := widget.NewContainer(
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
+		// the container will use an anchor layout to layout its single child widget
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			//Define number of columns in the grid
+			widget.GridLayoutOpts.Columns(1),
+			//Define how much padding to inset the child content
+			widget.GridLayoutOpts.Padding(widget.NewInsetsSimple(30)),
+			//Define how far apart the rows and columns should be
+			widget.GridLayoutOpts.Spacing(20, 10),
+			//Define how to stretch the rows and columns. Note it is required to
+			//specify the Stretch for each row and column.
+			widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false, true}),
+		)),
+	)
+	rootContainer.AddChild(innerContainer)
+
+	titleText := widget.NewText(
+		widget.TextOpts.Text(Level1Dialog.title, fontFace, color.White),
+	)
+	innerContainer.AddChild(titleText)
+
+	level1IntroText := widget.NewText(
+		widget.TextOpts.Text(Level1Dialog.intro, fontFace, color.White),
+	)
+	innerContainer.AddChild(level1IntroText)
+
+	innerContainer.AddChild(newSeparator(res, widget.RowLayoutData{
 		Stretch: true,
 	}))
 
@@ -262,12 +289,12 @@ func newGame() *Game {
 			Stretch: true,
 		})),
 		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Button", res.button.face, res.button.text),
+		widget.ButtonOpts.Text("Ok", res.button.face, res.button.text),
 		widget.ButtonOpts.TextPadding(res.button.padding),
 		widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
 		widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 	)
-	rootContainer.AddChild(b)
+	innerContainer.AddChild(b)
 
 	g := Game{
 		ui: ui,

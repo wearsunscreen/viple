@@ -160,7 +160,7 @@ type toolTipResources struct {
 }
 
 func newUIResources() (*uiResources, error) {
-	background := image.NewNineSliceColor(hexToColor(backgroundColor))
+	background := image.NewNineSliceColor(color.RGBA{0x13, 0x1a, 0x22, 0x80})
 
 	fonts, err := loadFonts()
 	if err != nil {
