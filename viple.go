@@ -37,8 +37,8 @@ type DialogText struct {
 type Level interface {
 	Draw(screen *ebiten.Image, frameCount int)
 	Initialize()
-	TitleText() string
 	IntroText() string
+	TitleText() string
 	Update(g *Game) (bool, error)
 }
 
@@ -60,12 +60,14 @@ var (
 
 type Game struct {
 	currentLevel LevelID
+	curLevel     *Level
 	frameCount   int
 	levelHL      LevelBricksHL
 	levelJK      LevelFlappy
 	levelVM      LevelGemsVisualMode
 	showUI       bool
 	ui           *ebitenui.UI
+	uiRes        *uiResources
 }
 
 type Number interface {
@@ -200,6 +202,7 @@ func loadImage(path string) *ebiten.Image {
 func closeUI(res *uiResources) {
 	res.close()
 }
+
 func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateableWidget {
 	c := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
@@ -234,15 +237,7 @@ func newGame() *Game {
 	if err != nil {
 		return nil
 	}
-
-	// This loads a font and creates a font face.
-	ttfFont, err := truetype.Parse(goregular.TTF)
-	if err != nil {
-		log.Fatal("Error Parsing Font", err)
-	}
-	fontFace := truetype.NewFace(ttfFont, &truetype.Options{
-		Size: 32,
-	})
+	g.uiRes = res
 
 	//This creates the root container for this UI.
 	rootContainer := widget.NewContainer(
@@ -259,9 +254,32 @@ func newGame() *Game {
 	ui := &ebitenui.UI{
 		Container: rootContainer,
 	}
+	defer closeUI(res)
+
 	g.ui = ui
 
-	defer closeUI(res)
+	showDialog(&g)
+
+	return &g
+}
+
+func seedRNG(seed int64) {
+	if seed == 0 {
+		seed = time.Now().UnixNano() % 10000
+	}
+	log.Println("Random seed is ", seed)
+	rng = rand.New(rand.NewSource(seed))
+}
+
+func showDialog(g *Game) {
+	// This loads a font and creates a font face.
+	ttfFont, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		log.Fatal("Error Parsing Font", err)
+	}
+	fontFace := truetype.NewFace(ttfFont, &truetype.Options{
+		Size: 32,
+	})
 
 	innerContainer := widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
@@ -278,7 +296,7 @@ func newGame() *Game {
 			widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false, true}),
 		)),
 	)
-	rootContainer.AddChild(innerContainer)
+	g.ui.Container.AddChild(innerContainer)
 
 	titleText := widget.NewText(
 		widget.TextOpts.Text(g.levelHL.TitleText(), fontFace, color.White),
@@ -290,7 +308,7 @@ func newGame() *Game {
 	)
 	innerContainer.AddChild(level1IntroText)
 
-	innerContainer.AddChild(newSeparator(res, widget.RowLayoutData{
+	innerContainer.AddChild(newSeparator(g.uiRes, widget.RowLayoutData{
 		Stretch: true,
 	}))
 
@@ -298,25 +316,16 @@ func newGame() *Game {
 		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 			Stretch: true,
 		})),
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Ok", res.button.face, res.button.text),
-		widget.ButtonOpts.TextPadding(res.button.padding),
+		widget.ButtonOpts.Image(g.uiRes.button.image),
+		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
+		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
 		widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
 		widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			hideUI(&g)
+			hideUI(g)
 		}),
 	)
 	innerContainer.AddChild(b)
 
-	return &g
-}
-
-func seedRNG(seed int64) {
-	if seed == 0 {
-		seed = time.Now().UnixNano() % 10000
-	}
-	log.Println("Random seed is ", seed)
-	rng = rand.New(rand.NewSource(seed))
 }
