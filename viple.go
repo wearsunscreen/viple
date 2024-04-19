@@ -32,23 +32,13 @@ const (
 type DialogText struct {
 	title string
 	intro string
-	outro string
-}
-
-var Level1Dialog = DialogText{
-	`Welcome to Viple
-VI Play to Learn. `,
-	`In the first level you will 
-learn to move left and right 
-by pressing H and K keys.`,
-	`Congrats, you're ready to 
-move onto the next level`,
 }
 
 type Level interface {
 	Draw(screen *ebiten.Image, frameCount int)
 	Initialize()
-	// update every frame, return true if level is complete
+	TitleText() string
+	IntroText() string
 	Update(g *Game) (bool, error)
 }
 
@@ -291,12 +281,12 @@ func newGame() *Game {
 	rootContainer.AddChild(innerContainer)
 
 	titleText := widget.NewText(
-		widget.TextOpts.Text(Level1Dialog.title, fontFace, color.White),
+		widget.TextOpts.Text(g.levelHL.TitleText(), fontFace, color.White),
 	)
 	innerContainer.AddChild(titleText)
 
 	level1IntroText := widget.NewText(
-		widget.TextOpts.Text(Level1Dialog.intro, fontFace, color.White),
+		widget.TextOpts.Text(g.levelHL.IntroText(), fontFace, color.White),
 	)
 	innerContainer.AddChild(level1IntroText)
 

@@ -269,6 +269,17 @@ func (l *LevelBricksHL) Initialize() {
 	}
 }
 
+func (l *LevelBricksHL) IntroText() string {
+	return `In the first level you will 
+	learn to move left and right 
+	by pressing H and K keys.`
+}
+
+func (l *LevelBricksHL) TitleText() string {
+	return `Welcome to Viple
+	VI Play to Learn.`
+}
+
 func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
 	if isCheatKeyPressed() {
 		return true, nil
