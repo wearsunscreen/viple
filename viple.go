@@ -2,12 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"golang.org/x/exp/constraints"
@@ -29,11 +27,17 @@ const (
 	version      = "Viple 0.1"
 )
 
+type DialogText struct {
+	title string
+	intro string
+}
+
 type Level interface {
 	Draw(screen *ebiten.Image, frameCount int)
-	Initialize()
-	// update every frame, return true if level is complete
-	Update(g *Game) (bool, error)
+	Initialize(id LevelID)
+	IntroText() string
+	TitleText() string
+	Update(frameCount int) (bool, error)
 }
 
 type LevelID int
@@ -54,11 +58,11 @@ var (
 
 type Game struct {
 	currentLevel LevelID
+	curLevel     Level
 	frameCount   int
-	levelHL      LevelBricksHL
-	levelJK      LevelFlappy
-	levelVM      LevelGemsVisualMode
+	showUI       bool
 	ui           *ebitenui.UI
+	uiRes        *uiResources
 }
 
 type Number interface {
@@ -79,6 +83,52 @@ func main() {
 	}
 }
 
+func (g *Game) Draw(screen *ebiten.Image) {
+	// draw background
+	g.curLevel.Draw(screen, g.frameCount)
+
+	// the UI
+	if g.showUI {
+		g.ui.Draw(screen)
+	}
+}
+
+func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	w, h := gameDimensions()
+	return w, h
+}
+
+func (g *Game) Update() error {
+
+	var levelOver bool
+	var err error
+	g.frameCount++
+
+	if g.showUI {
+		g.ui.Update()
+	} else {
+		levelOver, err = g.curLevel.Update(g.frameCount)
+		if levelOver {
+			// advance to next Level if current level has been won
+			// bugbug: we don't handle completing the last level cleanly
+			g.currentLevel += 1
+			g.showUI = true
+			switch g.currentLevel {
+			case LevelIdBricksHL:
+				g.curLevel = Level(&LevelBricksHL{})
+			case LevelIdBricksHJKL:
+				g.curLevel = Level(&LevelBricksHL{})
+			case LevelIdFlappy:
+				g.curLevel = Level(&LevelFlappy{})
+			case LevelIdGemsVM:
+				g.curLevel = Level(&LevelGemsVisualMode{})
+			}
+			g.curLevel.Initialize(g.currentLevel)
+		}
+	}
+	return err
+}
+
 // function to fill slice of any type
 func fillSlice[T any](s []T, value T) []T {
 	if s == nil {
@@ -91,68 +141,12 @@ func fillSlice[T any](s []T, value T) []T {
 	return s
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
-	// draw background
-	switch g.currentLevel {
-	case LevelIdBricksHL:
-		g.levelHL.Draw(screen, g.frameCount)
-	case LevelIdFlappy:
-		g.levelJK.Draw(screen, g.frameCount)
-	case LevelIdBricksHJKL:
-		g.levelHL.Draw(screen, g.frameCount)
-	case LevelIdGemsVM:
-		g.levelVM.Draw(screen, g.frameCount)
-	default:
-		panic("Unknown game level " + strconv.Itoa(int(g.currentLevel)))
-	}
-
-	// the UI
-	g.ui.Draw(screen)
-}
-
-func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	w, h := gameDimensions()
-	return w, h
-}
-
-func (g *Game) Update() error {
-	g.ui.Update()
-
-	var levelOver bool
-	var err error
-	g.frameCount++
-	switch g.currentLevel {
-	case LevelIdBricksHL:
-		levelOver, err = g.levelHL.Update(g.frameCount)
-	case LevelIdBricksHJKL:
-		levelOver, err = g.levelHL.Update(g.frameCount)
-	case LevelIdFlappy:
-		levelOver, err = g.levelJK.Update(g.frameCount)
-	case LevelIdGemsVM:
-		levelOver, err = g.levelVM.Update(g.frameCount)
-	}
-	if levelOver {
-		// advance to next Level if current level has been won
-		// bugbug: we don't handle completing the last level cleanly
-		g.currentLevel += 1
-
-		switch g.currentLevel {
-		case LevelIdBricksHL:
-			g.levelHL.Initialize()
-		case LevelIdBricksHJKL:
-			g.levelHL.level = g.currentLevel
-			g.levelHL.Initialize()
-		case LevelIdFlappy:
-			g.levelJK.Initialize()
-		case LevelIdGemsVM:
-			g.levelVM.Initialize()
-		}
-	}
-	return err
-}
-
 func gameDimensions() (width int, height int) {
 	return screenWidth, screenHeight
+}
+
+func hideUI(g *Game) {
+	g.showUI = false
 }
 
 func isCheatKeyPressed() bool {
@@ -183,6 +177,7 @@ func loadImage(path string) *ebiten.Image {
 func closeUI(res *uiResources) {
 	res.close()
 }
+
 func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateableWidget {
 	c := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
@@ -205,78 +200,38 @@ func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateab
 }
 
 func newGame() *Game {
+	g := Game{}
+
+	g.showUI = true
+	g.curLevel = Level(&LevelBricksHL{})
+	g.curLevel.Initialize(LevelIdBricksHL)
+
 	res, err := newUIResources()
 	if err != nil {
 		return nil
 	}
+	g.uiRes = res
 
 	//This creates the root container for this UI.
 	rootContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewGridLayout(
-			// It is using a GridLayout with a single column
-			widget.GridLayoutOpts.Columns(1),
-			// It uses the Stretch parameter to define how the rows will be layed out.
-			// - a fixed sized header
-			// - a content row that stretches to fill all remaining space
-			// - a fixed sized footer
-			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{false, true, false}),
-			// Padding defines how much space to put around the outside of the grid.
-			widget.GridLayoutOpts.Padding(widget.Insets{
-				Top:    20,
-				Bottom: 20,
-			}),
-			// Spacing defines how much space to put between each column and row
-			widget.GridLayoutOpts.Spacing(0, 20))),
-		widget.ContainerOpts.BackgroundImage(res.background))
+		// the container will use a plain color as its background
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.NRGBA{0x13, 0x1a, 0x22, 0x80})),
+		// the container will use an anchor layout to layout its single child widget
+		widget.ContainerOpts.Layout(widget.NewAnchorLayout(
+			//Set how much padding before displaying content
+			widget.AnchorLayoutOpts.Padding(widget.NewInsetsSimple(100)),
+		)),
+	)
 
 	// This adds the root container to the UI, so that it will be rendered.
 	ui := &ebitenui.UI{
 		Container: rootContainer,
 	}
-
 	defer closeUI(res)
 
-	// This loads a font and creates a font face.
-	ttfFont, err := truetype.Parse(goregular.TTF)
-	if err != nil {
-		log.Fatal("Error Parsing Font", err)
-	}
-	fontFace := truetype.NewFace(ttfFont, &truetype.Options{
-		Size: 32,
-	})
+	g.ui = ui
 
-	// This creates a text widget that says "Hello World!"
-	helloWorldLabel := widget.NewText(
-		widget.TextOpts.Text("Hello World!", fontFace, color.White),
-	)
-
-	// To display the text widget, we have to add it to the root container.
-	rootContainer.AddChild(helloWorldLabel)
-
-	rootContainer.AddChild(newSeparator(res, widget.RowLayoutData{
-		Stretch: true,
-	}))
-
-	b := widget.NewButton(
-		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
-			Stretch: true,
-		})),
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Button", res.button.face, res.button.text),
-		widget.ButtonOpts.TextPadding(res.button.padding),
-		widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
-		widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
-	)
-	rootContainer.AddChild(b)
-
-	g := Game{
-		ui: ui,
-	}
-
-	g.levelHL.Initialize()
-	g.levelJK.Initialize()
-	g.levelVM.Initialize()
-	g.currentLevel = LevelIdBricksHL
+	showDialog(&g)
 
 	return &g
 }
@@ -287,4 +242,63 @@ func seedRNG(seed int64) {
 	}
 	log.Println("Random seed is ", seed)
 	rng = rand.New(rand.NewSource(seed))
+}
+
+func showDialog(g *Game) {
+	// This loads a font and creates a font face.
+	ttfFont, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		log.Fatal("Error Parsing Font", err)
+	}
+	fontFace := truetype.NewFace(ttfFont, &truetype.Options{
+		Size: 32,
+	})
+
+	innerContainer := widget.NewContainer(
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
+		// the container will use an anchor layout to layout its single child widget
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			//Define number of columns in the grid
+			widget.GridLayoutOpts.Columns(1),
+			//Define how much padding to inset the child content
+			widget.GridLayoutOpts.Padding(widget.NewInsetsSimple(30)),
+			//Define how far apart the rows and columns should be
+			widget.GridLayoutOpts.Spacing(20, 10),
+			//Define how to stretch the rows and columns. Note it is required to
+			//specify the Stretch for each row and column.
+			widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false, true}),
+		)),
+	)
+	g.ui.Container.AddChild(innerContainer)
+
+	titleText := widget.NewText(
+		widget.TextOpts.Text(g.curLevel.TitleText(), fontFace, color.White),
+	)
+	innerContainer.AddChild(titleText)
+
+	level1IntroText := widget.NewText(
+		widget.TextOpts.Text(g.curLevel.IntroText(), fontFace, color.White),
+	)
+	innerContainer.AddChild(level1IntroText)
+
+	innerContainer.AddChild(newSeparator(g.uiRes, widget.RowLayoutData{
+		Stretch: true,
+	}))
+
+	b := widget.NewButton(
+		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Stretch: true,
+		})),
+		widget.ButtonOpts.Image(g.uiRes.button.image),
+		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
+		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
+		// widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
+		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
+		// add a handler that reacts to clicking the button
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			hideUI(g)
+		}),
+	)
+	innerContainer.AddChild(b)
+
 }

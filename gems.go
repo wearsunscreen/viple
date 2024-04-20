@@ -94,7 +94,7 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	}
 }
 
-func (l *LevelGemsVisualMode) Initialize() {
+func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 	l.numGems = 5
 	l.cursorGem = Point{numGemColumns / 2, gemRows / 2}
 	l.swapGem = Point{-1, -1}
@@ -403,6 +403,17 @@ func (l *LevelGemsVisualMode) gameIsWon() bool {
 		}
 	}
 	return true
+}
+
+func (l *LevelGemsVisualMode) IntroText() string {
+	return `In the first level you will 
+	learn to move left and right 
+	by pressing H and K keys.`
+}
+
+func (l *LevelGemsVisualMode) TitleText() string {
+	return `Welcome to Viple
+	VI Play to Learn.`
 }
 
 func (l *LevelGemsVisualMode) loadGems() {

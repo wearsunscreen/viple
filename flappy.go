@@ -88,13 +88,24 @@ func (l *LevelFlappy) Draw(screen *ebiten.Image, frameCount int) {
 	screen.DrawImage(l.fishImage, op)
 }
 
-func (l *LevelFlappy) Initialize() {
+func (l *LevelFlappy) Initialize(id LevelID) {
 	l.fishY = screenHeight / 2
 	l.startingFrame = 0
 	l.numPipesPast = 0
 	if l.fishImage == nil {
 		l.fishImage = loadImage("resources/pufferfish80.png")
 	}
+}
+
+func (l *LevelFlappy) IntroText() string {
+	return `In the first level you will 
+	learn to move left and right 
+	by pressing H and K keys.`
+}
+
+func (l *LevelFlappy) TitleText() string {
+	return `Welcome to Viple
+	VI Play to Learn.`
 }
 
 func (l *LevelFlappy) updateFish() {

@@ -172,21 +172,21 @@ func (l *LevelBricksHL) CheckWallCollisions() {
 
 	// Check for ball off bottom of screen
 	if l.ballY+ballRadius > screenHeight {
-		l.Initialize()
+		l.Initialize(l.level)
 	}
 
 	if l.level == LevelIdBricksHJKL {
 		// Check for ball off top of screen
 		if l.ballY+ballRadius < 0 {
-			l.Initialize()
+			l.Initialize(l.level)
 		}
 		// Check for ball off left of screen
 		if l.ballX+ballRadius < 0 {
-			l.Initialize()
+			l.Initialize(l.level)
 		}
 		// Check for ball off right of screen
 		if l.ballX+ballRadius > screenWidth {
-			l.Initialize()
+			l.Initialize(l.level)
 		}
 	}
 }
@@ -220,20 +220,8 @@ func (l *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 	}
 }
 
-func (l *LevelBricksHL) initBallMovement() {
-	if l.ballDX == 0 {
-		if l.level == LevelIdBricksHL {
-			l.ballDX = 0.1
-			l.ballDY = -ballSpeedY
-		} else {
-			l.ballDX = -2.0
-			l.ballDY = 0.1
-
-		}
-	}
-}
-
-func (l *LevelBricksHL) Initialize() {
+func (l *LevelBricksHL) Initialize(id LevelID) {
+	l.level = id
 	if l.level == LevelIdBricksHL {
 		l.numBrickRows = 3
 		l.numBrickCols = 5
@@ -269,6 +257,17 @@ func (l *LevelBricksHL) Initialize() {
 	}
 }
 
+func (l *LevelBricksHL) IntroText() string {
+	return `In the first level you will 
+	learn to move left and right 
+	by pressing H and K keys.`
+}
+
+func (l *LevelBricksHL) TitleText() string {
+	return `Welcome to Viple
+	VI Play to Learn.`
+}
+
 func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
 	if isCheatKeyPressed() {
 		return true, nil
@@ -285,6 +284,19 @@ func (l *LevelBricksHL) Update(frameCount int) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (l *LevelBricksHL) initBallMovement() {
+	if l.ballDX == 0 {
+		if l.level == LevelIdBricksHL {
+			l.ballDX = 0.1
+			l.ballDY = -ballSpeedY
+		} else {
+			l.ballDX = -2.0
+			l.ballDY = 0.1
+
+		}
+	}
 }
 
 func (l *LevelBricksHL) UpdateBallPosition() {
