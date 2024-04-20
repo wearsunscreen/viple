@@ -2,12 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"golang.org/x/exp/constraints"
@@ -36,10 +34,10 @@ type DialogText struct {
 
 type Level interface {
 	Draw(screen *ebiten.Image, frameCount int)
-	Initialize()
+	Initialize(id LevelID)
 	IntroText() string
 	TitleText() string
-	Update(g *Game) (bool, error)
+	Update(frameCount int) (bool, error)
 }
 
 type LevelID int
@@ -60,11 +58,8 @@ var (
 
 type Game struct {
 	currentLevel LevelID
-	curLevel     *Level
+	curLevel     Level
 	frameCount   int
-	levelHL      LevelBricksHL
-	levelJK      LevelFlappy
-	levelVM      LevelGemsVisualMode
 	showUI       bool
 	ui           *ebitenui.UI
 	uiRes        *uiResources
@@ -90,18 +85,7 @@ func main() {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
-	switch g.currentLevel {
-	case LevelIdBricksHL:
-		g.levelHL.Draw(screen, g.frameCount)
-	case LevelIdFlappy:
-		g.levelJK.Draw(screen, g.frameCount)
-	case LevelIdBricksHJKL:
-		g.levelHL.Draw(screen, g.frameCount)
-	case LevelIdGemsVM:
-		g.levelVM.Draw(screen, g.frameCount)
-	default:
-		panic("Unknown game level " + strconv.Itoa(int(g.currentLevel)))
-	}
+	g.curLevel.Draw(screen, g.frameCount)
 
 	// the UI
 	if g.showUI {
@@ -123,32 +107,23 @@ func (g *Game) Update() error {
 	if g.showUI {
 		g.ui.Update()
 	} else {
-		switch g.currentLevel {
-		case LevelIdBricksHL:
-			levelOver, err = g.levelHL.Update(g.frameCount)
-		case LevelIdBricksHJKL:
-			levelOver, err = g.levelHL.Update(g.frameCount)
-		case LevelIdFlappy:
-			levelOver, err = g.levelJK.Update(g.frameCount)
-		case LevelIdGemsVM:
-			levelOver, err = g.levelVM.Update(g.frameCount)
-		}
+		levelOver, err = g.curLevel.Update(g.frameCount)
 		if levelOver {
 			// advance to next Level if current level has been won
 			// bugbug: we don't handle completing the last level cleanly
 			g.currentLevel += 1
-
+			g.showUI = true
 			switch g.currentLevel {
 			case LevelIdBricksHL:
-				g.levelHL.Initialize()
+				g.curLevel = Level(&LevelBricksHL{})
 			case LevelIdBricksHJKL:
-				g.levelHL.level = g.currentLevel
-				g.levelHL.Initialize()
+				g.curLevel = Level(&LevelBricksHL{})
 			case LevelIdFlappy:
-				g.levelJK.Initialize()
+				g.curLevel = Level(&LevelFlappy{})
 			case LevelIdGemsVM:
-				g.levelVM.Initialize()
+				g.curLevel = Level(&LevelGemsVisualMode{})
 			}
+			g.curLevel.Initialize(g.currentLevel)
 		}
 	}
 	return err
@@ -228,10 +203,8 @@ func newGame() *Game {
 	g := Game{}
 
 	g.showUI = true
-	g.levelHL.Initialize()
-	g.levelJK.Initialize()
-	g.levelVM.Initialize()
-	g.currentLevel = LevelIdBricksHL
+	g.curLevel = Level(&LevelBricksHL{})
+	g.curLevel.Initialize(LevelIdBricksHL)
 
 	res, err := newUIResources()
 	if err != nil {
@@ -299,12 +272,12 @@ func showDialog(g *Game) {
 	g.ui.Container.AddChild(innerContainer)
 
 	titleText := widget.NewText(
-		widget.TextOpts.Text(g.levelHL.TitleText(), fontFace, color.White),
+		widget.TextOpts.Text(g.curLevel.TitleText(), fontFace, color.White),
 	)
 	innerContainer.AddChild(titleText)
 
 	level1IntroText := widget.NewText(
-		widget.TextOpts.Text(g.levelHL.IntroText(), fontFace, color.White),
+		widget.TextOpts.Text(g.curLevel.IntroText(), fontFace, color.White),
 	)
 	innerContainer.AddChild(level1IntroText)
 
@@ -319,8 +292,8 @@ func showDialog(g *Game) {
 		widget.ButtonOpts.Image(g.uiRes.button.image),
 		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
 		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
-		widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
-		widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
+		// widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
+		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			hideUI(g)
