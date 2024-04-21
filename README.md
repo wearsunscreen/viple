@@ -1,35 +1,36 @@
-# viple
-A game to help you learn vi.
+# Viple: A Game to Learn Vi
 
+Viple is a game designed to help you learn and practice the vi text editor commands. Viple is written in Go, using the [Ebiten game engine](https://ebitengine.org/) and the [Ebiten UI widget library](https://ebitenui.github.io/). This project is still under development. Contributions are welcome.
 
-## License
-Copyright John Crane, 2024
+## Features
 
-## Defects
-* The first swap will allow act like a swap if there are triples on the board even if the swap does not create a triple.
+- Interactive levels to teach various vi commands
+- Gamified learning experience with different game modes
+- Cross-platform compatibility
 
-## To Do
-* snake level
-* Level description
-* split into modules
-* use a generic list - https://gobyexample.com/generics
-* use composition to define levels https://www.tutorialspoint.com/composition-in-golang
-** each level would contain a Drawer, Updater, Initializer, StartInformer, StartEnder
-* level to teach delete lines in gems
-* cut and paste lines in gems
-* maki game and word advance
-* brickout where you switch side with paddle using page up, page down commands
-* adventure game with command line
-* bricks 1 and 2 using function pointers for polymorphism
-** to introduce a level
-** to congratulate completion of a level and game, options to repeat, go to next, go to main menu
-** Main menu, lets you choose level
-* move handling of : commands to shared location
-* pufferfish animation
-* pufferfish have its own rng to repeat level
-* Scaler to animate gems
-* Fader to animate disappearing gems, bricks
-* Flush keystrokes between levels
-* Deploy as Open Source?
-* deploy as web page
-* Snake
+## To-Do List
+
+- Add a level to teach a new command
+- Implement a Snake game to practice the H, J, K, and L navigation keys
+- Add another Gems level to teach the `dd` command for deleting lines
+- Improve the overall visual design and aesthetics
+- Develop a maki game to teach word advance 
+- Implement a level completion screen with options to repeat, proceed to the next level, or return to the main menu
+- Create a main menu for selecting levels 
+- Add support for quitting the game using commands `:q`, `:quit`, `:exit`, etc.
+- Introduce a quiz level for learning write and exit commands
+- Add a timer to levels to challenge the user
+- Animate the pufferfish character
+- Script the pipe gaps in the pufferfish level
+- Implement scaling, fading and rotation animations for disappearing gems and bricks
+- Build and deploy the game as a web application using WebAssembly (WASM)
+- Save player progress
+- Test the game on different platforms for compatibility
+
+## Known Defects
+
+- The first and second pipes in the Flappy Bird level are not evenly spaced
+
+## Contributing
+
+Contributions to Viple are welcome! If you find any issues or have ideas for improvements, please feel free to open an issue or submit a pull request on the project's GitLab repository.
