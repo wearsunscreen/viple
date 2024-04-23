@@ -210,6 +210,7 @@ func newGame() *Game {
 	if err != nil {
 		return nil
 	}
+	defer closeUI(res)
 	g.uiRes = res
 
 	//This creates the root container for this UI.
@@ -227,7 +228,6 @@ func newGame() *Game {
 	ui := &ebitenui.UI{
 		Container: rootContainer,
 	}
-	defer closeUI(res)
 
 	g.ui = ui
 
