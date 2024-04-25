@@ -18,6 +18,7 @@ const (
 
 const (
 	blinkInverval = 60 / 2
+	EMPTY_GEM     = -1
 	gemCellSize   = 50
 	dropDuration  = 60
 	gemScale      = float64(gemCellSize-4) / float64(gemWidth)
@@ -32,6 +33,7 @@ type LevelGemsVisualMode struct {
 	gemGrid     [][]Square
 	gemImages   []*ebiten.Image
 	keyInput    string
+	level       LevelID
 	mode        Mode
 	numGems     int
 	swapGem     Point
@@ -89,12 +91,13 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	// draw gems
 	for y, row := range l.gemGrid {
 		for x := range row {
-			l.gemGrid[y][x].drawGem(screen, l.gemImages[l.gemGrid[y][x].color], frameCount)
+			l.gemGrid[y][x].drawGem(screen, l.gemImages[l.gemGrid[y][x].gem], frameCount)
 		}
 	}
 }
 
 func (l *LevelGemsVisualMode) Initialize(id LevelID) {
+	l.level = id
 	l.numGems = 5
 	l.cursorGem = Point{numGemColumns / 2, gemRows / 2}
 	l.swapGem = Point{-1, -1}
@@ -139,7 +142,7 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 		if inpututil.IsKeyJustPressed(key) {
 			switch l.mode {
 			case NormalMode:
-				handleKeyCommand(l, key)
+				handleKeyCommand(l, key, frameCount)
 			case VisualMode:
 				handleKeyVisual(l, key, frameCount)
 			}
@@ -164,7 +167,7 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 */
 
 type Square struct {
-	color int
+	gem   int
 	mover *Mover
 	point Point
 	z     int
@@ -188,7 +191,7 @@ func (square *Square) drawBackground(screen *ebiten.Image, color color.Color) {
 }
 
 func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, frameCount int) {
-	if square.color >= 0 {
+	if square.gem >= 0 {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(gemScale, gemScale)
 		if square.mover != nil {
@@ -216,6 +219,42 @@ func (square *Square) SetZ(z int) {
 /* ==================================
 */
 
+// TODO: rewrite this as a generic function for any type
+func copyGrid(grid [][]Square) [][]Square {
+	clone := make([][]Square, len(grid))
+	for i := range grid {
+		clone[i] = make([]Square, len(grid[i]))
+		copy(clone[i], grid[i])
+	}
+	return clone
+}
+
+// Delete all gems in a row. If it does nor result in a triple the delete will fail and restore to original state.
+func deleteRow(l *LevelGemsVisualMode, frameCount int) bool {
+	// copy the gem grid
+	var newGrid [][]Square
+	newGrid = copyGrid(l.gemGrid)
+
+	// remove the row
+	row := l.cursorGem.y
+	newGrid = append(newGrid[:row], newGrid[row+1:]...)
+
+	// check if the swap will create a triple
+	makesATriple, _ := findTriples(newGrid)
+
+	if makesATriple {
+		// mark row to be deleted as EMPTY_GEM
+		for x, _ := range l.gemGrid[row] {
+			l.gemGrid[row][x].gem = EMPTY_GEM
+		}
+	} else {
+		// not a invalid move
+		return false
+	}
+	fillEmpties(l, frameCount)
+	return true
+}
+
 func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
 	completionRatio := 1 - float64(mover.endFrame-frameCount)/float64(mover.endFrame-mover.startFrame)
 	startPosition := squareToScreenPoint(mover.startPoint)
@@ -230,11 +269,11 @@ func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 	for x := range numGemColumns {
 		for y := range gemRows {
 			y = gemRows - 1 - y // work from bottom up
-			if l.gemGrid[y][x].color == -1 {
+			if l.gemGrid[y][x].gem == -1 {
 				above := findSquareAbove(l, Point{x, y})
 				if above.y >= 0 {
-					l.gemGrid[y][x].color = l.gemGrid[above.y][above.x].color
-					l.gemGrid[above.y][above.x].color = -1
+					l.gemGrid[y][x].gem = l.gemGrid[above.y][above.x].gem
+					l.gemGrid[above.y][above.x].gem = -1
 					l.gemGrid[y][x].AddMover(frameCount, dropDuration,
 						l.gemGrid[above.y][above.x].point,
 						l.gemGrid[y][x].point)
@@ -246,8 +285,8 @@ func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 	// fill empties at the top of the gemGrid with newly generated colors
 	for x := range numGemColumns {
 		for y := range gemRows {
-			if l.gemGrid[y][x].color == -1 {
-				l.gemGrid[y][x].color = rng.Intn(l.numGems)
+			if l.gemGrid[y][x].gem == -1 {
+				l.gemGrid[y][x].gem = rng.Intn(l.numGems)
 
 				// there's a bit of a kludge here. The call to offsetPoint should be equal to the height
 				// of the stack squares being removed, but don't calculate that height and just pass
@@ -263,7 +302,7 @@ func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 func fillRandom(l *LevelGemsVisualMode) {
 	for y, row := range l.gemGrid {
 		for x := range row {
-			l.gemGrid[y][x].color = rng.Intn(l.numGems)
+			l.gemGrid[y][x].gem = rng.Intn(l.numGems)
 		}
 	}
 }
@@ -271,7 +310,7 @@ func fillRandom(l *LevelGemsVisualMode) {
 func findSquareAbove(l *LevelGemsVisualMode, p Point) Point {
 	for y := range p.y {
 		y = p.y - 1 - y
-		for l.gemGrid[y][p.x].color != -1 {
+		for l.gemGrid[y][p.x].gem != -1 {
 			return Point{p.x, y}
 		}
 	}
@@ -289,8 +328,8 @@ func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	// find all horizontal triples
 	for y, row := range gemGrid[:] {
 		for x := range gemGrid[:len(row)-2] {
-			if gemGrid[y][x].color >= 0 { // if is a color
-				if gemGrid[y][x].color == gemGrid[y][x+1].color && gemGrid[y][x].color == gemGrid[y][x+2].color {
+			if gemGrid[y][x].gem >= 0 { // if is a color
+				if gemGrid[y][x].gem == gemGrid[y][x+1].gem && gemGrid[y][x].gem == gemGrid[y][x+2].gem {
 					mask[y][x], mask[y][x+1], mask[y][x+2] = true, true, true
 					found = true
 				}
@@ -301,8 +340,8 @@ func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	// find all vertical triples
 	for y, row := range gemGrid[:len(gemGrid)-2] {
 		for x := range gemGrid[:len(row)] {
-			if gemGrid[y][x].color >= 0 { // if is a color
-				if gemGrid[y][x].color == gemGrid[y+1][x].color && gemGrid[y][x].color == gemGrid[y+2][x].color {
+			if gemGrid[y][x].gem >= 0 { // if is a color
+				if gemGrid[y][x].gem == gemGrid[y+1][x].gem && gemGrid[y][x].gem == gemGrid[y+2][x].gem {
 					mask[y][x], mask[y+1][x], mask[y+2][x] = true, true, true
 					found = true
 				}
@@ -312,8 +351,12 @@ func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	return found, mask
 }
 
-func handleKeyCommand(l *LevelGemsVisualMode, key ebiten.Key) {
+func handleKeyCommand(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	switch key {
+	case ebiten.KeyD:
+		if l.level == LevelIdGemsDD {
+			deleteRow(l, frameCount)
+		}
 	case ebiten.KeyH:
 		l.cursorGem.x = max(l.cursorGem.x-1, 0)
 	case ebiten.KeyL:
@@ -448,18 +491,13 @@ func swapSquares(l *LevelGemsVisualMode, frameCount int) bool {
 	if l.swapGem == l.cursorGem {
 		return false
 	}
-	/*
-		if l.gemGrid[l.swapGem.y][l.swapGem.x].point == l.gemGrid[l.cursorGem.y][l.cursorGem.x].point {
-			return false
-		}
-	*/
 
-	// swap colors
+	// swap gems
 	fromSquare := &l.gemGrid[l.swapGem.y][l.swapGem.x]
 	toSquare := &l.gemGrid[l.cursorGem.y][l.cursorGem.x]
-	temp := fromSquare.color
-	fromSquare.color = toSquare.color
-	toSquare.color = temp
+	temp := fromSquare.gem
+	fromSquare.gem = toSquare.gem
+	toSquare.gem = temp
 
 	// check if the swap will create a triple
 	makesATriple, _ := findTriples(l.gemGrid)
@@ -469,9 +507,9 @@ func swapSquares(l *LevelGemsVisualMode, frameCount int) bool {
 		fromSquare.AddMover(frameCount, 60, toSquare.point, fromSquare.point)
 	} else {
 		// restore original colors
-		temp := fromSquare.color
-		fromSquare.color = toSquare.color
-		toSquare.color = temp
+		temp := fromSquare.gem
+		fromSquare.gem = toSquare.gem
+		toSquare.gem = temp
 		l.swapGem = l.cursorGem // return the cursor to the original location
 
 		// tell the user he made an invalid move
@@ -488,7 +526,7 @@ func updateTriples(l *LevelGemsVisualMode, frameCount int) {
 		for y, row := range l.gemGrid {
 			for x := range row {
 				if mask[y][x] {
-					l.gemGrid[y][x].color = -1
+					l.gemGrid[y][x].gem = -1
 					l.triplesMask[y][x] = true
 				}
 			}

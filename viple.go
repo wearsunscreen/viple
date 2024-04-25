@@ -47,6 +47,7 @@ const (
 	LevelIdFlappy
 	LevelIdBricksHJKL
 	LevelIdGemsVM
+	LevelIdGemsDD
 )
 
 type Mode int
@@ -121,6 +122,8 @@ func (g *Game) Update() error {
 			case LevelIdFlappy:
 				g.curLevel = Level(&LevelFlappy{})
 			case LevelIdGemsVM:
+				g.curLevel = Level(&LevelGemsVisualMode{})
+			case LevelIdGemsDD:
 				g.curLevel = Level(&LevelGemsVisualMode{})
 			}
 			g.curLevel.Initialize(g.currentLevel)
