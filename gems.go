@@ -98,7 +98,12 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 
 func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 	l.level = id
-	l.numGems = 5
+	switch id {
+	case LevelIdGemsVM:
+		l.numGems = 5
+	case LevelIdGemsDD:
+		l.numGems = 3
+	}
 	l.cursorGem = Point{numGemColumns / 2, gemRows / 2}
 	l.swapGem = Point{-1, -1}
 	l.gemGrid = make([][]Square, gemRows)
@@ -117,7 +122,6 @@ func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 		l.triplesMask[i] = make([]bool, numGemColumns)
 	}
 
-	l.numGems = 5
 	l.mode = NormalMode
 	fillRandom(l)
 
@@ -248,7 +252,12 @@ func deleteRow(l *LevelGemsVisualMode, frameCount int) bool {
 			l.gemGrid[row][x].gem = EMPTY_GEM
 		}
 	} else {
-		// not a invalid move
+		PlaySound(failOgg)
+		// penalize player for invalid move
+		// mark row to be deleted as EMPTY_GEM
+		for x, _ := range l.gemGrid[row] {
+			l.triplesMask[row][x] = false
+		}
 		return false
 	}
 	fillEmpties(l, frameCount)
@@ -446,17 +455,6 @@ func (l *LevelGemsVisualMode) gameIsWon() bool {
 		}
 	}
 	return true
-}
-
-func (l *LevelGemsVisualMode) IntroText() string {
-	return `In the first level you will 
-	learn to move left and right 
-	by pressing H and K keys.`
-}
-
-func (l *LevelGemsVisualMode) TitleText() string {
-	return `Welcome to Viple
-	VI Play to Learn.`
 }
 
 func (l *LevelGemsVisualMode) loadGems() {

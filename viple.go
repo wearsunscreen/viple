@@ -27,27 +27,20 @@ const (
 	version      = "Viple 0.1"
 )
 
-type DialogText struct {
-	title string
-	intro string
-}
-
 type Level interface {
 	Draw(screen *ebiten.Image, frameCount int)
 	Initialize(id LevelID)
-	IntroText() string
-	TitleText() string
 	Update(frameCount int) (bool, error)
 }
 
 type LevelID int
 
 const (
-	LevelIdBricksHL = iota
-	LevelIdFlappy
+	LevelIdFlappy = iota
+	LevelIdGemsDD
+	LevelIdBricksHL
 	LevelIdBricksHJKL
 	LevelIdGemsVM
-	LevelIdGemsDD
 )
 
 type Mode int
@@ -206,8 +199,8 @@ func newGame() *Game {
 	g := Game{}
 
 	g.showUI = true
-	g.curLevel = Level(&LevelBricksHL{})
-	g.curLevel.Initialize(LevelIdBricksHL)
+	g.curLevel = Level(&LevelFlappy{})
+	g.curLevel.Initialize(LevelIdFlappy)
 
 	res, err := newUIResources()
 	if err != nil {
@@ -253,10 +246,12 @@ func showDialog(g *Game) {
 	if err != nil {
 		log.Fatal("Error Parsing Font", err)
 	}
-	fontFace := truetype.NewFace(ttfFont, &truetype.Options{
+	textFace := truetype.NewFace(ttfFont, &truetype.Options{
+		Size: 16,
+	})
+	titleFace := truetype.NewFace(ttfFont, &truetype.Options{
 		Size: 32,
 	})
-
 	innerContainer := widget.NewContainer(
 		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
 		// the container will use an anchor layout to layout its single child widget
@@ -275,12 +270,12 @@ func showDialog(g *Game) {
 	g.ui.Container.AddChild(innerContainer)
 
 	titleText := widget.NewText(
-		widget.TextOpts.Text(g.curLevel.TitleText(), fontFace, color.White),
+		widget.TextOpts.Text(GetTitleText(int(g.currentLevel)), titleFace, color.White),
 	)
 	innerContainer.AddChild(titleText)
 
 	level1IntroText := widget.NewText(
-		widget.TextOpts.Text(g.curLevel.IntroText(), fontFace, color.White),
+		widget.TextOpts.Text(GetIntroText(int(g.currentLevel)), textFace, color.White),
 	)
 	innerContainer.AddChild(level1IntroText)
 

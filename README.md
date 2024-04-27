@@ -10,6 +10,10 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 
 ## To-Do List
 
+- DD level
+- - add text
+- - put before VM
+- - don't allow other key strokes
 - Add another Gems level to teach the `dd` command for deleting lines
 - Add a level to teach a new command
 - Replace IntroText() and TitleText() with map(LevelID, string)

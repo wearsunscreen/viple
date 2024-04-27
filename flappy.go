@@ -97,17 +97,6 @@ func (l *LevelFlappy) Initialize(id LevelID) {
 	}
 }
 
-func (l *LevelFlappy) IntroText() string {
-	return `In the first level you will 
-	learn to move left and right 
-	by pressing H and K keys.`
-}
-
-func (l *LevelFlappy) TitleText() string {
-	return `Welcome to Viple
-	VI Play to Learn.`
-}
-
 func (l *LevelFlappy) updateFish() {
 	// Update vertical position based on keyboard input
 	heldDown := ebiten.IsKeyPressed(ebiten.KeyJ)
