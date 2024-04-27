@@ -15,7 +15,7 @@ const (
 	fishWidth    = 60
 	fishX        = 150
 	gapHeight    = 100
-	lastPipe     = 3
+	lastPipe     = 7
 	pipeWidth    = 60
 	pipeInterval = 5 * 60
 )

@@ -34,7 +34,7 @@ type LevelGemsVisualMode struct {
 	gemImages   []*ebiten.Image
 	keyInput    string
 	level       LevelID
-	mode        Mode
+	mode        int
 	numGems     int
 	swapGem     Point
 	triplesMask [][]bool
@@ -198,6 +198,8 @@ func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, fram
 	if square.gem >= 0 {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(gemScale, gemScale)
+
+		// Bugbug: applyMove should be called from Update(), not Draw()
 		if square.mover != nil {
 			applyMover(square.mover, op, frameCount)
 		} else {

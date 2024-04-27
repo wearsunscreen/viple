@@ -43,7 +43,13 @@ const (
 	LevelIdGemsVM
 )
 
-type Mode int
+type LevelMode int
+
+const (
+	IntroMode = iota
+	PlayMode
+	OutroMode
+)
 
 var (
 	rng  *rand.Rand
@@ -53,8 +59,8 @@ var (
 type Game struct {
 	currentLevel LevelID
 	curLevel     Level
+	mode         LevelMode
 	frameCount   int
-	showUI       bool
 	ui           *ebitenui.UI
 	uiRes        *uiResources
 }
@@ -82,7 +88,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.curLevel.Draw(screen, g.frameCount)
 
 	// the UI
-	if g.showUI {
+	if g.mode == IntroMode || g.mode == OutroMode {
 		g.ui.Draw(screen)
 	}
 }
@@ -98,28 +104,16 @@ func (g *Game) Update() error {
 	var err error
 	g.frameCount++
 
-	if g.showUI {
+	switch g.mode {
+	case IntroMode:
 		g.ui.Update()
-	} else {
+	case OutroMode:
+		g.ui.Update()
+	case PlayMode:
 		levelOver, err = g.curLevel.Update(g.frameCount)
 		if levelOver {
-			// advance to next Level if current level has been won
-			// bugbug: we don't handle completing the last level cleanly
-			g.currentLevel += 1
-			g.showUI = true
-			switch g.currentLevel {
-			case LevelIdBricksHL:
-				g.curLevel = Level(&LevelBricksHL{})
-			case LevelIdBricksHJKL:
-				g.curLevel = Level(&LevelBricksHL{})
-			case LevelIdFlappy:
-				g.curLevel = Level(&LevelFlappy{})
-			case LevelIdGemsVM:
-				g.curLevel = Level(&LevelGemsVisualMode{})
-			case LevelIdGemsDD:
-				g.curLevel = Level(&LevelGemsVisualMode{})
-			}
-			g.curLevel.Initialize(g.currentLevel)
+			g.mode = OutroMode
+			showOutroDialog(g)
 		}
 	}
 	return err
@@ -142,7 +136,14 @@ func gameDimensions() (width int, height int) {
 }
 
 func hideUI(g *Game) {
-	g.showUI = false
+	if g.mode == IntroMode {
+		g.mode = PlayMode
+	} else if g.mode == OutroMode {
+		g.mode = IntroMode
+		showIntroDialog(g)
+	} else {
+		log.Println("Closing UI when UI is not showing?")
+	}
 }
 
 func isCheatKeyPressed() bool {
@@ -198,7 +199,7 @@ func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateab
 func newGame() *Game {
 	g := Game{}
 
-	g.showUI = true
+	g.mode = IntroMode
 	g.curLevel = Level(&LevelFlappy{})
 	g.curLevel.Initialize(LevelIdFlappy)
 
@@ -206,6 +207,8 @@ func newGame() *Game {
 	if err != nil {
 		return nil
 	}
+
+	// Bugbug: do we really want to defer this?
 	defer closeUI(res)
 	g.uiRes = res
 
@@ -227,7 +230,7 @@ func newGame() *Game {
 
 	g.ui = ui
 
-	showDialog(&g)
+	showIntroDialog(&g)
 
 	return &g
 }
@@ -240,12 +243,16 @@ func seedRNG(seed int64) {
 	rng = rand.New(rand.NewSource(seed))
 }
 
-func showDialog(g *Game) {
+func showIntroDialog(g *Game) {
 	// This loads a font and creates a font face.
 	ttfFont, err := truetype.Parse(goregular.TTF)
 	if err != nil {
 		log.Fatal("Error Parsing Font", err)
 	}
+
+	// release resources
+	g.ui.Container.RemoveChildren()
+
 	textFace := truetype.NewFace(ttfFont, &truetype.Options{
 		Size: 16,
 	})
@@ -295,6 +302,79 @@ func showDialog(g *Game) {
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			hideUI(g)
+		}),
+	)
+	innerContainer.AddChild(b)
+
+}
+
+func showOutroDialog(g *Game) {
+	// This loads a font and creates a font face.
+	ttfFont, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		log.Fatal("Error Parsing Font", err)
+	}
+	// release resources
+	g.ui.Container.RemoveChildren()
+
+	titleFace := truetype.NewFace(ttfFont, &truetype.Options{
+		Size: 32,
+	})
+	innerContainer := widget.NewContainer(
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
+		// the container will use an anchor layout to layout its single child widget
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			//Define number of columns in the grid
+			widget.GridLayoutOpts.Columns(1),
+			//Define how much padding to inset the child content
+			widget.GridLayoutOpts.Padding(widget.NewInsetsSimple(30)),
+			//Define how far apart the rows and columns should be
+			widget.GridLayoutOpts.Spacing(20, 10),
+			//Define how to stretch the rows and columns. Note it is required to
+			//specify the Stretch for each row and column.
+			widget.GridLayoutOpts.Stretch([]bool{true, false}, []bool{false, true}),
+		)),
+	)
+	g.ui.Container.AddChild(innerContainer)
+
+	titleText := widget.NewText(
+		widget.TextOpts.Text("Level Completed!", titleFace, color.White),
+	)
+	innerContainer.AddChild(titleText)
+
+	innerContainer.AddChild(newSeparator(g.uiRes, widget.RowLayoutData{
+		Stretch: true,
+	}))
+
+	b := widget.NewButton(
+		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Stretch: true,
+		})),
+		widget.ButtonOpts.Image(g.uiRes.button.image),
+		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
+		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
+		// widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
+		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
+		// add a handler that reacts to clicking the button
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			hideUI(g)
+			// advance to next Level if current level has been won
+			// bugbug: we don't handle completing the last level cleanly
+			g.currentLevel += 1
+			switch g.currentLevel {
+			case LevelIdBricksHL:
+				g.curLevel = Level(&LevelBricksHL{})
+			case LevelIdBricksHJKL:
+				g.curLevel = Level(&LevelBricksHL{})
+			case LevelIdFlappy:
+				g.curLevel = Level(&LevelFlappy{})
+			case LevelIdGemsVM:
+				g.curLevel = Level(&LevelGemsVisualMode{})
+			case LevelIdGemsDD:
+				g.curLevel = Level(&LevelGemsVisualMode{})
+			}
+			g.curLevel.Initialize(g.currentLevel)
+
 		}),
 	)
 	innerContainer.AddChild(b)
