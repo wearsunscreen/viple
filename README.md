@@ -11,17 +11,15 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 ## To-Do List
 
 - DD level
-- - add text
-- - put before VM
 - - don't allow other key strokes
-- Add another Gems level to teach the `dd` command for deleting lines
-- Add a level to teach a new command
-- Replace IntroText() and TitleText() with map(LevelID, string)
-- use function pointers for updates in 
+- - make wider
+- - allow delete multiple lines, d2, d3 etc
+- - require "dd" instead of "d"
+- on exit without write, restart level
+- on exit with write, advance to next level
 - Implement a Snake game to practice the H, J, K, and L navigation keys
 - Improve the overall visual design and aesthetics
 - Develop a maki game to teach word advance 
-- Implement a level completion screen with options to repeat, proceed to the next level, or return to the main menu
 - Create a main menu for selecting levels 
 - Add support for quitting the game using commands `:q`, `:quit`, `:exit`, etc.
 - Introduce a quiz level for learning write and exit commands
@@ -36,6 +34,7 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 ## Known Defects
 
 - The first and second pipes in the Flappy Bird level are not evenly spaced
+- LevelGemsDD can have unplayable grid, no possible triples to make
 
 ## Contributing
 

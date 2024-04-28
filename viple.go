@@ -135,7 +135,8 @@ func gameDimensions() (width int, height int) {
 	return screenWidth, screenHeight
 }
 
-func hideUI(g *Game) {
+// advance to the next mode
+func advanceLevelMode(g *Game) {
 	if g.mode == IntroMode {
 		g.mode = PlayMode
 	} else if g.mode == OutroMode {
@@ -301,7 +302,7 @@ func showIntroDialog(g *Game) {
 		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			hideUI(g)
+			advanceLevelMode(g)
 		}),
 	)
 	innerContainer.AddChild(b)
@@ -357,10 +358,10 @@ func showOutroDialog(g *Game) {
 		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			hideUI(g)
 			// advance to next Level if current level has been won
 			// bugbug: we don't handle completing the last level cleanly
 			g.currentLevel += 1
+			advanceLevelMode(g)
 			switch g.currentLevel {
 			case LevelIdBricksHL:
 				g.curLevel = Level(&LevelBricksHL{})
