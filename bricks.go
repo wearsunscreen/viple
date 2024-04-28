@@ -56,13 +56,21 @@ func anyInSlice(bools []bool) bool {
 	return false
 }
 
+func isPointInRect(pointX, pointY, rectLeft, rectTop, rectWidth, rectHeight float32) bool {
+	if pointX > rectLeft && pointX < rectLeft+rectWidth &&
+		pointY > rectTop && pointY < rectTop+rectHeight {
+		return true
+	}
+	return false
+}
+
 func (l *LevelBricksHL) CheckBrickCollisions() {
 	// Check for brick collision
 	for y, row := range l.bricks {
 		for x, brick := range row {
 			if brick {
-				if l.ballX > float32(x*l.brickWidth+l.brickLeft) && l.ballX < float32((x+1)*l.brickWidth+l.brickLeft) &&
-					l.ballY > float32(y*l.brickHeight+l.brickTop) && l.ballY < float32((y+1)*l.brickHeight+l.brickTop) {
+				if isPointInRect(l.ballX, l.ballY, float32(x*l.brickWidth+l.brickLeft),
+					float32(y*l.brickHeight+l.brickTop), float32(l.brickWidth), float32(l.brickHeight)) {
 
 					// we have a collision,clear the brick
 					l.bricks[y][x] = false

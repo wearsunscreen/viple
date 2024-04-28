@@ -220,14 +220,6 @@ func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, fram
 	}
 }
 
-func (square *Square) GetZ() int {
-	return square.z
-}
-
-func (square *Square) SetZ(z int) {
-	square.z = z
-}
-
 /* ==================================
 /* ==================================
 	Other functions
