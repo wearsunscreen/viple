@@ -112,10 +112,10 @@ func (l *LevelFlappy) updateFish() {
 }
 
 func (l *LevelFlappy) updatePipes(frameCount int) {
-	if l.startingFrame == 0 {
-		l.startingFrame = frameCount
-		l.addPipe(frameCount)
-	}
+	// if l.startingFrame == 0 {
+	// 	l.startingFrame = frameCount
+	// 	l.addPipe(frameCount)
+	// }
 	if (frameCount+pipeInterval)%pipeInterval == 0 {
 		l.addPipe(frameCount)
 	}
