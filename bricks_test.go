@@ -2,6 +2,47 @@ package main
 
 import "testing"
 
+func TestIsCircleTouchingRect(t *testing.T) {
+	tests := []struct {
+		circleX, circleY, circleRadius, rectLeft, rectTop, rectWidth, rectHeight float32
+		want                                                                     bool
+	}{
+		// above the rectangle
+		{105, 85, 10, 100, 100, 100, 100, false},
+		{195, 85, 10, 100, 100, 100, 100, false},
+
+		// center above, radius touching
+		{105, 95, 10, 100, 100, 100, 100, true},
+		{195, 95, 10, 100, 100, 100, 100, true},
+
+		{85, 105, 10, 100, 100, 100, 100, false},
+		{95, 105, 10, 100, 100, 100, 100, true},
+		{195, 105, 10, 100, 100, 100, 100, true},
+		{205, 105, 10, 100, 100, 100, 100, true},
+		{215, 105, 10, 100, 100, 100, 100, false},
+
+		{85, 195, 10, 100, 100, 100, 100, false},
+		{95, 195, 10, 100, 100, 100, 100, true},
+		{195, 195, 10, 100, 100, 100, 100, true},
+		{205, 195, 10, 100, 100, 100, 100, true},
+		{215, 195, 10, 100, 100, 100, 100, false},
+
+		// center belo, radius touching
+		{105, 205, 10, 100, 100, 100, 100, true},
+		{195, 205, 10, 100, 100, 100, 100, true},
+
+		// below the rectangle
+		{105, 215, 10, 100, 100, 100, 100, false},
+		{195, 215, 10, 100, 100, 100, 100, false},
+	}
+
+	for _, tt := range tests {
+		got := isCircleTouchingRect(tt.circleX, tt.circleY, tt.circleRadius, tt.rectLeft, tt.rectTop, tt.rectWidth, tt.rectHeight)
+		if got != tt.want {
+			t.Errorf("isCircleTouchingRect(%v, %v, %v, %v, %v, %v, %v) = %v; want %v", tt.circleX, tt.circleY, tt.circleRadius, tt.rectLeft, tt.rectTop, tt.rectWidth, tt.rectHeight, got, tt.want)
+		}
+	}
+}
 func TestIsPointInRect(t *testing.T) {
 	tests := []struct {
 		pointX, pointY, rectLeft, rectTop, rectWidth, rectHeight float32
