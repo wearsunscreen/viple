@@ -69,7 +69,7 @@ func (l *LevelBricksHL) CheckBrickCollisions() {
 	for y, row := range l.bricks {
 		for x, brick := range row {
 			if brick {
-				if isPointInRect(l.ballX, l.ballY, float32(x*l.brickWidth+l.brickLeft),
+				if isCircleTouchingRect(l.ballX, l.ballY, ballRadius, float32(x*l.brickWidth+l.brickLeft),
 					float32(y*l.brickHeight+l.brickTop), float32(l.brickWidth), float32(l.brickHeight)) {
 
 					// we have a collision,clear the brick
@@ -230,7 +230,8 @@ func (l *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 
 func (l *LevelBricksHL) Initialize(id LevelID) {
 	l.level = id
-	if l.level == LevelIdBricksHL {
+	switch id {
+	case LevelIdBricksHL:
 		l.numBrickRows = 3
 		l.numBrickCols = 5
 		l.brickWidth = screenWidth / l.numBrickCols
@@ -241,7 +242,7 @@ func (l *LevelBricksHL) Initialize(id LevelID) {
 		l.paddlesX = screenWidth/2 - paddlesXWidth/2
 		l.ballX = screenWidth / 2
 		l.ballY = screenHeight / 3 * 2
-	} else {
+	case LevelIdBricksHJKL:
 		l.brickWidth = 50
 		l.brickHeight = 50
 		l.numBrickRows = 3
@@ -251,7 +252,7 @@ func (l *LevelBricksHL) Initialize(id LevelID) {
 
 		l.paddlesX = screenWidth/2 - paddlesXWidth/2
 		l.paddlesY = screenHeight/2 - paddlesYHeight/2
-		l.ballY = float32(l.brickTop) - ballRadius
+		l.ballY = float32(l.brickTop) - (ballRadius*2 + 1)
 		l.ballX = float32(l.brickLeft + (l.brickHeight * (l.numBrickRows / 2)))
 	}
 
