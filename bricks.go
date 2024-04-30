@@ -309,6 +309,7 @@ func (l *LevelBricksHL) UpdatePaddlePositions() {
 	heldLeft := ebiten.IsKeyPressed(ebiten.KeyH)
 	heldRight := ebiten.IsKeyPressed(ebiten.KeyL)
 	if heldLeft || heldRight {
+		clearKeystrokes()
 		if heldLeft && !heldRight {
 			l.paddlesX -= paddleSpeed
 		} else if !heldLeft && heldRight {
@@ -324,6 +325,7 @@ func (l *LevelBricksHL) UpdatePaddlePositions() {
 		heldDown := ebiten.IsKeyPressed(ebiten.KeyJ)
 		heldUp := ebiten.IsKeyPressed(ebiten.KeyK)
 		if heldDown || heldUp {
+			clearKeystrokes()
 			if heldDown && !heldUp {
 				l.paddlesY += paddleSpeed
 			} else if !heldDown && heldUp {

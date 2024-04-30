@@ -110,6 +110,7 @@ func (l *LevelFlappy) updateFish() {
 	heldDown := ebiten.IsKeyPressed(ebiten.KeyJ)
 	heldUp := ebiten.IsKeyPressed(ebiten.KeyK)
 	if heldDown || heldUp {
+		clearKeystrokes()
 		if heldDown && !heldUp {
 			l.fishY += fishSpeed
 		} else if !heldDown && heldUp {

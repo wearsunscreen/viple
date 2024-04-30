@@ -2,7 +2,6 @@ package main
 
 import (
 	"image/color"
-	"os"
 	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -151,8 +150,7 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 		}
 	}
 
-	keys = inpututil.AppendPressedKeys(keys[:0])
-	for _, key := range keys {
+	for _, key := range globalKeys {
 		if inpututil.IsKeyJustPressed(key) {
 			switch l.mode {
 			case NormalMode:
@@ -370,33 +368,24 @@ func handleKeyCommand(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 		if l.level == LevelIdGemsDD {
 			deleteRow(l, frameCount)
 		}
+		clearKeystrokes()
 	case ebiten.KeyH:
 		l.cursorGem.x = max(l.cursorGem.x-1, 0)
+		clearKeystrokes()
 	case ebiten.KeyL:
 		l.cursorGem.x = min(l.cursorGem.x+1, numGemColumns-1)
+		clearKeystrokes()
 	case ebiten.KeyK:
 		l.cursorGem.y = max(l.cursorGem.y-1, 0)
+		clearKeystrokes()
 	case ebiten.KeyJ:
 		l.cursorGem.y = min(l.cursorGem.y+1, gemRows-1)
+		clearKeystrokes()
 	case ebiten.KeyV:
 		// entering VisualMode (where we do swaps)
 		l.swapGem = l.cursorGem
 		l.mode = VisualMode
-	case ebiten.KeySemicolon:
-		if ebiten.IsKeyPressed(ebiten.KeyShift) {
-			l.keyInput = l.keyInput + ":"
-		}
-	case ebiten.KeyQ:
-		fallthrough
-	case ebiten.KeyX:
-		// quit on ":q", ":x"
-		l.keyInput = l.keyInput + key.String()
-		if len(l.keyInput) > 1 {
-			if l.keyInput[len(l.keyInput)-2:] == ":Q" ||
-				l.keyInput[len(l.keyInput)-2:] == ":X" {
-				os.Exit(0)
-			}
-		}
+		clearKeystrokes()
 	}
 }
 
@@ -404,19 +393,25 @@ func handleKeyVisual(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyH:
 		l.swapGem.x = max(l.swapGem.x-1, 0)
+		clearKeystrokes()
 	case ebiten.KeyL:
 		l.swapGem.x = min(l.swapGem.x+1, numGemColumns-1)
+		clearKeystrokes()
 	case ebiten.KeyK:
 		l.swapGem.y = max(l.swapGem.y-1, 0)
+		clearKeystrokes()
 	case ebiten.KeyJ:
 		l.swapGem.y = min(l.swapGem.y+1, gemRows-1)
+		clearKeystrokes()
 	case ebiten.KeyV:
 		PlaySound(failOgg)
+		clearKeystrokes()
 	case ebiten.KeyEscape:
 		// exit visual mode without swapping
 		l.mode = NormalMode
 		l.cursorGem = l.swapGem
 		l.swapGem = Point{-1, -1}
+		clearKeystrokes()
 	case ebiten.KeyY:
 		// attempt swap
 		if l.swapGem.x != -1 && l.swapGem != l.cursorGem {
@@ -430,6 +425,7 @@ func handleKeyVisual(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 				PlaySound(failOgg)
 			}
 		}
+		clearKeystrokes()
 	}
 }
 

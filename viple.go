@@ -27,6 +27,7 @@ const (
 	version      = "Viple 0.1"
 )
 
+// Level interface
 type Level interface {
 	Draw(screen *ebiten.Image, frameCount int)
 	Initialize(id LevelID)
@@ -52,8 +53,8 @@ const (
 )
 
 var (
-	rng  *rand.Rand
-	keys []ebiten.Key
+	rng        *rand.Rand
+	globalKeys []ebiten.Key
 )
 
 type Game struct {
@@ -104,6 +105,10 @@ func (g *Game) Update() error {
 	var err error
 	g.frameCount++
 
+	// save the keys that are currently pressed
+	globalKeys = inpututil.AppendPressedKeys(globalKeys)
+	removeDuplicates(&globalKeys)
+
 	switch g.mode {
 	case IntroMode:
 		g.ui.Update()
@@ -117,6 +122,19 @@ func (g *Game) Update() error {
 		}
 	}
 	return err
+}
+
+func removeDuplicates(keys *[]ebiten.Key) {
+	found := make(map[ebiten.Key]bool)
+	j := 0
+	for i, x := range *keys {
+		if !found[x] {
+			found[x] = true
+			(*keys)[j] = (*keys)[i]
+			j++
+		}
+	}
+	*keys = (*keys)[:j]
 }
 
 // function to fill slice of any type
@@ -145,6 +163,10 @@ func advanceLevelMode(g *Game) {
 	} else {
 		log.Println("Closing UI when UI is not showing?")
 	}
+}
+
+func clearKeystrokes() {
+	globalKeys = nil
 }
 
 func isCheatKeyPressed() bool {
@@ -361,6 +383,8 @@ func showOutroDialog(g *Game) {
 			// advance to next Level if current level has been won
 			// bugbug: we don't handle completing the last level cleanly
 			g.currentLevel += 1
+			clearKeystrokes()
+			globalKeys = globalKeys[:0] // clear the keys
 			advanceLevelMode(g)
 			switch g.currentLevel {
 			case LevelIdBricksHL:
