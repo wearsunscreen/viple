@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	blinkInverval = 60 / 2
+	blinkInverval = 60 / 3
 	EMPTY_GEM     = -1
 	gemCellSize   = 50
 	dropDuration  = 60
@@ -536,9 +536,7 @@ func updateTriples(l *LevelGemsVisualMode, frameCount int) {
 				}
 			}
 		}
-		if l.gameIsWon() {
-			PlaySound(winOgg)
-		} else {
+		if !l.gameIsWon() {
 			PlaySound(tripleOgg)
 		}
 	}

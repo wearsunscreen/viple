@@ -8,13 +8,18 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - Gamified learning experience with different game modes
 - Cross-platform compatibility
 
-## To-Do List
+## MVP
+- return is same as click on ok button
+- 'dd', 'd1' 'd2 etc delete lines
+- 'y' in visual mode delete selected gems
+- change sequence of levels, flappy, brick out, brickout hjkl, dd, vm
+- increase number of gems in dd 
+- fanfare on all wins
+- clean end of game
 
-- DD level
-- - don't allow other key strokes
-- - make wider
-- - allow delete multiple lines, d2, d3 etc
-- - require "dd" instead of "d"
+
+## To-Do List
+- set of valid and invalid key strokes per level
 - on exit without write, restart level
 - on exit with write, advance to next level
 - Implement a Snake game to practice the H, J, K, and L navigation keys

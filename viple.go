@@ -107,7 +107,6 @@ func (g *Game) Update() error {
 
 	// save the keys that are currently pressed
 	globalKeys = inpututil.AppendPressedKeys(globalKeys)
-	removeDuplicates(&globalKeys)
 
 	switch g.mode {
 	case IntroMode:
@@ -115,26 +114,19 @@ func (g *Game) Update() error {
 	case OutroMode:
 		g.ui.Update()
 	case PlayMode:
+		// remove duplicates of keys that are held down
+		removeDuplicatesOf(&globalKeys, ebiten.KeyH)
+		removeDuplicatesOf(&globalKeys, ebiten.KeyJ)
+		removeDuplicatesOf(&globalKeys, ebiten.KeyK)
+		removeDuplicatesOf(&globalKeys, ebiten.KeyL)
 		levelOver, err = g.curLevel.Update(g.frameCount)
 		if levelOver {
+			PlaySound(winOgg)
 			g.mode = OutroMode
 			showOutroDialog(g)
 		}
 	}
 	return err
-}
-
-func removeDuplicates(keys *[]ebiten.Key) {
-	found := make(map[ebiten.Key]bool)
-	j := 0
-	for i, x := range *keys {
-		if !found[x] {
-			found[x] = true
-			(*keys)[j] = (*keys)[i]
-			j++
-		}
-	}
-	*keys = (*keys)[:j]
 }
 
 // function to fill slice of any type
@@ -166,7 +158,7 @@ func advanceLevelMode(g *Game) {
 }
 
 func clearKeystrokes() {
-	globalKeys = nil
+	globalKeys = globalKeys[:0]
 }
 
 func isCheatKeyPressed() bool {
@@ -256,6 +248,35 @@ func newGame() *Game {
 	showIntroDialog(&g)
 
 	return &g
+}
+
+func removeDuplicates[T comparable](s *[]T) {
+	found := make(map[T]bool)
+	j := 0
+	for i, x := range *s {
+		if !found[x] {
+			found[x] = true
+			(*s)[j] = (*s)[i]
+			j++
+		}
+	}
+	*s = (*s)[:j]
+}
+
+// removeDuplicatesOf removes all duplicates of a specified value from a slice.
+func removeDuplicatesOf[T comparable](s *[]T, value T) {
+	found := false
+	j := 0
+	for i, x := range *s {
+		if x != value || !found {
+			if x == value {
+				found = true
+			}
+			(*s)[j] = (*s)[i]
+			j++
+		}
+	}
+	*s = (*s)[:j]
 }
 
 func seedRNG(seed int64) {
