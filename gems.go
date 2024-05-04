@@ -71,15 +71,14 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 		cursorColors = [2]color.Color{brightRed, lightButter}
 
 		// draw visualmode cursor
-		cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
-		startX := cursorStart.x
 		if l.mode == VisualMode {
-
+			cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
+			startX := cursorStart.x
 			for y := cursorStart.y; y <= cursorEnd.y; y++ {
 				for x := startX; x < numGemColumns; x++ {
 					l.gemGrid[y][x].drawBackground(screen, darkGreen)
 					if x == cursorEnd.x && y == cursorEnd.y {
-						l.gemGrid[y][x].drawBackground(screen, darkGreen)
+						// bugbug: redundaant l.gemGrid[y][x].drawBackground(screen, darkGreen)
 						break
 					}
 					// start next line at left edge
@@ -275,16 +274,90 @@ func deleteRow(l *LevelGemsVisualMode, frameCount int) bool {
 	return true
 }
 
+// Delete all gems selected in visual mode.
+// If it does nor result in a triple the delete will fail and restore to original state.
+func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
+
+	// copy the gem grid to test if removing the selected squares will result in a triple
+	var newGrid [][]Square
+	newGrid = copyGrid(l.gemGrid)
+
+	// set all selected squares to EMPTY_GEM
+	cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
+	startX := cursorStart.x
+	for y := cursorStart.y; y <= cursorEnd.y; y++ {
+		for x := startX; x < numGemColumns; x++ {
+			newGrid[y][x].gem = EMPTY_GEM
+			if x == cursorEnd.x && y == cursorEnd.y {
+				// bugbug: redundaant newGrid[y][x].gem = EMPTY_GEM
+				break
+			}
+			// start next line at left edge
+			startX = 0
+		}
+	}
+	dropSquares(newGrid)
+	// check if the swap will create a triple
+	makesATriple, _ := findTriples(l.gemGrid)
+
+	// debugging
+	makesATriple = true
+
+	if makesATriple {
+		// set all selected squares to EMPTY_GEM
+		cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
+		startX := cursorStart.x
+		for y := cursorStart.y; y <= cursorEnd.y; y++ {
+			for x := startX; x < numGemColumns; x++ {
+				l.gemGrid[y][x].gem = EMPTY_GEM
+				if x == cursorEnd.x && y == cursorEnd.y {
+					// bugbug: redundaant l.gemGrid[y][x].gem = EMPTY_GEM
+					break
+				}
+				// start next line at left edge
+				startX = 0
+			}
+		}
+	} else {
+		PlaySound(failOgg)
+		// penalize player for invalid move
+		// mark row to be deleted as EMPTY_GEM
+		for x, _ := range l.gemGrid[l.cursorGem.y] {
+			l.triplesMask[l.cursorGem.y][x] = false
+		}
+		return false
+	}
+	fillEmpties(l, frameCount)
+	return true
+}
+
+// move squares down to fill empty squares
+func dropSquares(gemGrid [][]Square) {
+	// find empty square and move squares from above down to fill
+	for x := range numGemColumns {
+		for y := range gemRows {
+			y = gemRows - 1 - y // work from bottom up
+			if gemGrid[y][x].gem == EMPTY_GEM {
+				above := findSquareAbove(gemGrid, Point{x, y})
+				if above.y >= 0 {
+					gemGrid[y][x].gem = gemGrid[above.y][above.x].gem
+					gemGrid[above.y][above.x].gem = EMPTY_GEM
+				}
+			}
+		}
+	}
+}
+
 func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 	// find empty square and move squares from above down to fill
 	for x := range numGemColumns {
 		for y := range gemRows {
 			y = gemRows - 1 - y // work from bottom up
-			if l.gemGrid[y][x].gem == -1 {
-				above := findSquareAbove(l, Point{x, y})
+			if l.gemGrid[y][x].gem == EMPTY_GEM {
+				above := findSquareAbove(l.gemGrid, Point{x, y})
 				if above.y >= 0 {
 					l.gemGrid[y][x].gem = l.gemGrid[above.y][above.x].gem
-					l.gemGrid[above.y][above.x].gem = -1
+					l.gemGrid[above.y][above.x].gem = EMPTY_GEM
 					l.gemGrid[y][x].AddMover(frameCount, dropDuration,
 						l.gemGrid[above.y][above.x].point,
 						l.gemGrid[y][x].point)
@@ -318,10 +391,10 @@ func fillRandom(l *LevelGemsVisualMode) {
 	}
 }
 
-func findSquareAbove(l *LevelGemsVisualMode, p Point) Point {
+func findSquareAbove(gemGrid [][]Square, p Point) Point {
 	for y := range p.y {
 		y = p.y - 1 - y
-		for l.gemGrid[y][p.x].gem != -1 {
+		for gemGrid[y][p.x].gem != -1 {
 			return Point{p.x, y}
 		}
 	}
@@ -415,7 +488,7 @@ func handleKeyVisual(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	case ebiten.KeyY:
 		// attempt swap
 		if l.swapGem.x != -1 && l.swapGem != l.cursorGem {
-			if result := swapSquares(l, frameCount); result {
+			if result := deleteSelection(l, frameCount); result {
 				// swap successful
 				// exiting visual mode
 				l.mode = NormalMode

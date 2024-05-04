@@ -50,10 +50,15 @@ var IntroTitle = [...]string{
 }
 
 func GetIntroText(id int) string {
+	if id >= len(IntroTitle) {
+		return "You have reached the end of the game!"
+	}
 	return IntroText[id]
 }
 
 func GetTitleText(id int) string {
+	if id >= len(IntroTitle) {
+		return "Kudos!"
+	}
 	return IntroTitle[id]
-
 }
