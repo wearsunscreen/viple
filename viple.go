@@ -111,8 +111,10 @@ func (g *Game) Update() error {
 	switch g.mode {
 	case IntroMode:
 		g.ui.Update()
+		checkForKeystroke(ebiten.KeyEnter, func() { advanceLevelMode(g) })
 	case OutroMode:
 		g.ui.Update()
+		checkForKeystroke(ebiten.KeyEnter, func() { advanceLevelMode(g) })
 	case PlayMode:
 		// remove duplicates of keys that are held down
 		removeDuplicatesOf(&globalKeys, ebiten.KeyH)
@@ -127,6 +129,13 @@ func (g *Game) Update() error {
 		}
 	}
 	return err
+}
+
+// checkForKeystroke checks if a key is pressed and calls the function if it is
+func checkForKeystroke(key ebiten.Key, f func()) {
+	if inpututil.IsKeyJustPressed(key) {
+		f()
+	}
 }
 
 // function to fill slice of any type
@@ -147,6 +156,12 @@ func gameDimensions() (width int, height int) {
 
 // advance to the next mode
 func advanceLevelMode(g *Game) {
+	if g.mode == OutroMode {
+		// advance to next Level if current level has been won
+		g.currentLevel += 1
+		clearKeystrokes()
+		globalKeys = globalKeys[:0] // clear the keys
+	}
 	if g.mode == IntroMode {
 		g.mode = PlayMode
 	} else if g.mode == OutroMode {
@@ -154,6 +169,21 @@ func advanceLevelMode(g *Game) {
 		showIntroDialog(g)
 	} else {
 		log.Println("Closing UI when UI is not showing?")
+	}
+	if g.mode == IntroMode {
+		switch g.currentLevel {
+		case LevelIdBricksHL:
+			g.curLevel = Level(&LevelBricksHL{})
+		case LevelIdBricksHJKL:
+			g.curLevel = Level(&LevelBricksHL{})
+		case LevelIdFlappy:
+			g.curLevel = Level(&LevelFlappy{})
+		case LevelIdGemsVM:
+			g.curLevel = Level(&LevelGemsVisualMode{})
+		case LevelIdGemsDD:
+			g.curLevel = Level(&LevelGemsVisualMode{})
+		}
+		g.curLevel.Initialize(g.currentLevel)
 	}
 }
 
@@ -401,26 +431,7 @@ func showOutroDialog(g *Game) {
 		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			// advance to next Level if current level has been won
-			// bugbug: we don't handle completing the last level cleanly
-			g.currentLevel += 1
-			clearKeystrokes()
-			globalKeys = globalKeys[:0] // clear the keys
 			advanceLevelMode(g)
-			switch g.currentLevel {
-			case LevelIdBricksHL:
-				g.curLevel = Level(&LevelBricksHL{})
-			case LevelIdBricksHJKL:
-				g.curLevel = Level(&LevelBricksHL{})
-			case LevelIdFlappy:
-				g.curLevel = Level(&LevelFlappy{})
-			case LevelIdGemsVM:
-				g.curLevel = Level(&LevelGemsVisualMode{})
-			case LevelIdGemsDD:
-				g.curLevel = Level(&LevelGemsVisualMode{})
-			}
-			g.curLevel.Initialize(g.currentLevel)
-
 		}),
 	)
 	innerContainer.AddChild(b)

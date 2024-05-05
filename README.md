@@ -10,11 +10,10 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 
 ## MVP
 - return is same as click on ok button
+- vm yank moves lower squares up vertically and horizontally (like in vi)
 - 'dd', 'd1' 'd2 etc delete lines
-- 'y' in visual mode delete selected gems
 - change sequence of levels, flappy, brick out, brickout hjkl, dd, vm
 - increase number of gems in dd 
-- fanfare on all wins
 - clean end of game
 
 
