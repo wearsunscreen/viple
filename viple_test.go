@@ -119,3 +119,46 @@ func TestRemoveDuplicatesOf(t *testing.T) {
 		})
 	}
 }
+
+func TestTail(t *testing.T) {
+	tests := []struct {
+		name string
+		in   []int
+		n    int
+		want []int
+	}{
+		{
+			name: "Get last 3 elements",
+			in:   []int{1, 2, 3, 4, 5},
+			n:    3,
+			want: []int{3, 4, 5},
+		},
+		{
+			name: "Get more elements than exist",
+			in:   []int{1, 2, 3, 4, 5},
+			n:    10,
+			want: []int{1, 2, 3, 4, 5},
+		},
+		{
+			name: "Get no elements",
+			in:   []int{1, 2, 3, 4, 5},
+			n:    0,
+			want: []int{},
+		},
+		{
+			name: "Nil slice",
+			in:   nil,
+			n:    3,
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tail(tt.in, tt.n)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("tail() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

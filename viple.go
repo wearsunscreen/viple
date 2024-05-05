@@ -191,6 +191,18 @@ func clearKeystrokes() {
 	globalKeys = globalKeys[:0]
 }
 
+func equals[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func isCheatKeyPressed() bool {
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		return true
@@ -328,7 +340,7 @@ func showIntroDialog(g *Game) {
 	g.ui.Container.RemoveChildren()
 
 	textFace := truetype.NewFace(ttfFont, &truetype.Options{
-		Size: 16,
+		Size: 20,
 	})
 	titleFace := truetype.NewFace(ttfFont, &truetype.Options{
 		Size: 32,
@@ -435,5 +447,12 @@ func showOutroDialog(g *Game) {
 		}),
 	)
 	innerContainer.AddChild(b)
+}
 
+// tail returns the last n elements of a slice.
+func tail[T comparable](slice []T, n int) []T {
+	if n > len(slice) {
+		n = len(slice)
+	}
+	return slice[len(slice)-n:]
 }

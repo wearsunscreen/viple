@@ -152,9 +152,9 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 		if inpututil.IsKeyJustPressed(key) {
 			switch l.mode {
 			case NormalMode:
-				handleKeyCommand(l, key, frameCount)
+				handleKeyDeleteRows(l, key, frameCount)
 			case VisualMode:
-				handleKeyVisual(l, key, frameCount)
+				handleKeyVisualMode(l, key, frameCount)
 			}
 		}
 		// cheat code to fill
@@ -243,7 +243,7 @@ func copyGrid(grid [][]Square) [][]Square {
 }
 
 // Delete all gems in a row. If it does nor result in a triple the delete will fail and restore to original state.
-func deleteRow(l *LevelGemsVisualMode, frameCount int) bool {
+func deleteCurrentRow(l *LevelGemsVisualMode, frameCount int) bool {
 	// copy the gem grid
 	var newGrid [][]Square
 	newGrid = copyGrid(l.gemGrid)
@@ -435,11 +435,11 @@ func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	return found, mask
 }
 
-func handleKeyCommand(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
+func handleKeyDeleteRows(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyD:
-		if l.level == LevelIdGemsDD {
-			deleteRow(l, frameCount)
+		if equals(tail(globalKeys, 2), []ebiten.Key{ebiten.KeyD, ebiten.KeyD}) {
+			deleteCurrentRow(l, frameCount)
 		}
 		clearKeystrokes()
 	case ebiten.KeyH:
@@ -462,7 +462,7 @@ func handleKeyCommand(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	}
 }
 
-func handleKeyVisual(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
+func handleKeyVisualMode(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyH:
 		l.swapGem.x = max(l.swapGem.x-1, 0)
