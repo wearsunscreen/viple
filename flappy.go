@@ -59,13 +59,21 @@ func (l *LevelFlappy) gameIsWon() bool {
 	return l.numPipesPast > lastPipe
 }
 
+func isCircleTouchingRect(circleX, circleY, circleRadius, rectLeft, rectTop, rectWidth, rectHeight float32) bool {
+	// Check if the circle's center is inside the rectangle
+	if circleX+circleRadius >= rectLeft && circleX-circleRadius <= rectLeft+rectWidth &&
+		circleY+circleRadius >= rectTop && circleY-circleRadius <= rectTop+rectHeight {
+		return true
+	}
+	return false
+}
+
 func (l *LevelFlappy) CheckPipeCollisions() {
 	for _, p := range l.pipes {
-		if fishX+fishRadius > p.x && fishX-fishRadius < p.x+pipeWidth {
-			if l.fishY-fishRadius < p.gapY || l.fishY+fishRadius > p.gapY+gapHeight {
-				p.color = darkScarletRed
-				l.numPipesPast = 0
-			}
+		if isCircleTouchingRect(fishX, l.fishY, fishRadius, p.x, 0, pipeWidth, p.gapY) ||
+			isCircleTouchingRect(fishX, l.fishY, fishRadius, p.x, p.gapY+gapHeight, pipeWidth, screenHeight-p.gapY+gapHeight) {
+			p.color = darkScarletRed
+			l.numPipesPast = 0
 		}
 	}
 }
@@ -102,6 +110,7 @@ func (l *LevelFlappy) updateFish() {
 	heldDown := ebiten.IsKeyPressed(ebiten.KeyJ)
 	heldUp := ebiten.IsKeyPressed(ebiten.KeyK)
 	if heldDown || heldUp {
+		clearKeystrokes()
 		if heldDown && !heldUp {
 			l.fishY += fishSpeed
 		} else if !heldDown && heldUp {
@@ -112,10 +121,6 @@ func (l *LevelFlappy) updateFish() {
 }
 
 func (l *LevelFlappy) updatePipes(frameCount int) {
-	// if l.startingFrame == 0 {
-	// 	l.startingFrame = frameCount
-	// 	l.addPipe(frameCount)
-	// }
 	if (frameCount+pipeInterval)%pipeInterval == 0 {
 		l.addPipe(frameCount)
 	}
