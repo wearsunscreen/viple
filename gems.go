@@ -78,7 +78,6 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 				for x := startX; x < numGemColumns; x++ {
 					l.gemGrid[y][x].drawBackground(screen, darkGreen)
 					if x == cursorEnd.x && y == cursorEnd.y {
-						// bugbug: redundaant l.gemGrid[y][x].drawBackground(screen, darkGreen)
 						break
 					}
 					// start next line at left edge
@@ -289,7 +288,6 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 		for x := startX; x < numGemColumns; x++ {
 			newGrid[y][x].gem = EMPTY_GEM
 			if x == cursorEnd.x && y == cursorEnd.y {
-				// bugbug: redundaant newGrid[y][x].gem = EMPTY_GEM
 				break
 			}
 			// start next line at left edge
@@ -300,9 +298,6 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 	// check if the swap will create a triple
 	makesATriple, _ := findTriples(l.gemGrid)
 
-	// debugging
-	makesATriple = true
-
 	if makesATriple {
 		// set all selected squares to EMPTY_GEM
 		cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
@@ -311,7 +306,6 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 			for x := startX; x < numGemColumns; x++ {
 				l.gemGrid[y][x].gem = EMPTY_GEM
 				if x == cursorEnd.x && y == cursorEnd.y {
-					// bugbug: redundaant l.gemGrid[y][x].gem = EMPTY_GEM
 					break
 				}
 				// start next line at left edge
@@ -349,40 +343,38 @@ func dropSquares(gemGrid [][]Square) {
 }
 
 func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
-	// find empty square and move squares from above down to fill
+	// for each column
 	for x := range numGemColumns {
-		for y := range gemRows {
-			y = gemRows - 1 - y // work from bottom up
+		// find empty square and move squares from below to fill
+		for y := 0; y < gemRows; y++ {
 			if l.gemGrid[y][x].gem == EMPTY_GEM {
-				above := findSquareAbove(l.gemGrid, Point{x, y})
-				if above.y >= 0 {
-					l.gemGrid[y][x].gem = l.gemGrid[above.y][above.x].gem
-					l.gemGrid[above.y][above.x].gem = EMPTY_GEM
+				below := findSquareBelow(l.gemGrid, Point{x, y})
+				if below.y >= 0 {
+					l.gemGrid[y][x].gem = l.gemGrid[below.y][below.x].gem
+					l.gemGrid[below.y][below.x].gem = EMPTY_GEM
 					l.gemGrid[y][x].AddMover(frameCount, dropDuration,
-						l.gemGrid[above.y][above.x].point,
+						l.gemGrid[below.y][below.x].point,
 						l.gemGrid[y][x].point)
 				}
 			}
 		}
 	}
 
-	// fill empties at the top of the gemGrid with newly generated colors
+	// fill empties at the bottom of the gemGrid with newly generated gems
 	for x := range numGemColumns {
 		for y := range gemRows {
-			if l.gemGrid[y][x].gem == -1 {
+			if l.gemGrid[y][x].gem == EMPTY_GEM {
 				l.gemGrid[y][x].gem = rng.Intn(l.numGems)
-
-				// there's a bit of a kludge here. The call to offsetPoint should be equal to the height
-				// of the stack squares being removed, but don't calculate that height and just pass
-				// cellsize * -1.
+				// l.gemGrid[y][x].point.y = gemCellSize*gemRows + 1
 				l.gemGrid[y][x].AddMover(frameCount, dropDuration,
-					offsetPoint(l.gemGrid[y][x].point, Point{0, gemCellSize * -1}),
+					Point{l.gemGrid[y][x].point.x, gemCellSize*gemRows + 1},
 					l.gemGrid[y][x].point)
 			}
 		}
 	}
 }
 
+// fills the entire gemGrid with random gems
 func fillRandom(l *LevelGemsVisualMode) {
 	for y, row := range l.gemGrid {
 		for x := range row {
@@ -394,13 +386,21 @@ func fillRandom(l *LevelGemsVisualMode) {
 func findSquareAbove(gemGrid [][]Square, p Point) Point {
 	for y := range p.y {
 		y = p.y - 1 - y
-		for gemGrid[y][p.x].gem != -1 {
+		for gemGrid[y][p.x].gem != EMPTY_GEM {
 			return Point{p.x, y}
 		}
 	}
 	return Point{-1, -1} // did not find a square with color
 }
 
+func findSquareBelow(gemGrid [][]Square, p Point) Point {
+	for y := p.y; y < gemRows; y++ {
+		if gemGrid[y][p.x].gem != EMPTY_GEM {
+			return Point{p.x, y}
+		}
+	}
+	return Point{-1, -1} // did not find a square with color
+}
 func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	// create a local mask to mark all square that are in triples
 	mask := make([][]bool, gemRows)
