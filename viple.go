@@ -38,9 +38,9 @@ type LevelID int
 
 const (
 	LevelIdFlappy = iota
-	LevelIdGemsDD
 	LevelIdBricksHL
 	LevelIdBricksHJKL
+	LevelIdGemsDD
 	LevelIdGemsVM
 )
 

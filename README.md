@@ -9,7 +9,6 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - Cross-platform compatibility
 
 ## MVP
-- return is same as click on ok button
 - vm yank moves lower squares up vertically and horizontally (like in vi)
 - 'dd', 'd1' 'd2 etc delete lines
 - change sequence of levels, flappy, brick out, brickout hjkl, dd, vm
@@ -37,9 +36,6 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 
 ## Known Defects
 
-- The first and second pipes in the Flappy Bird level are not evenly spaced
-- LevelGemsDD can have unplayable grid, no possible triples to make
-
 ## Contributing
 
-Contributions to Viple are welcome! If you find any issues or have ideas for improvements, please feel free to open an issue or submit a pull request on the project's GitLab repository.
+Contributions to Viple are welcome! Want to add a new level? Found a but? Have ideas for improvements? Please feel free to open an issue or submit a pull request on the project's GitLab repository.
