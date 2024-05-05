@@ -108,7 +108,7 @@ func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 		l.numGems = 5
 		numGemColumns = 5
 	case LevelIdGemsDD:
-		l.numGems = 3
+		l.numGems = 4
 		numGemColumns = 8
 	}
 	l.cursorGem = Point{numGemColumns / 2, gemRows / 2}
@@ -243,29 +243,40 @@ func copyGrid(grid [][]Square) [][]Square {
 }
 
 // Delete all gems in a row. If it does nor result in a triple the delete will fail and restore to original state.
-func deleteCurrentRow(l *LevelGemsVisualMode, frameCount int) bool {
+func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 	// copy the gem grid
 	var newGrid [][]Square
 	newGrid = copyGrid(l.gemGrid)
 
-	// remove the row
-	row := l.cursorGem.y
-	newGrid = append(newGrid[:row], newGrid[row+1:]...)
+	// remove the rows
+	for i := 0; i < numRows; i++ {
+		row := l.cursorGem.y
+		if row >= len(newGrid) {
+			break
+		}
+		newGrid = append(newGrid[:row], newGrid[row+1:]...)
+	}
 
 	// check if the swap will create a triple
 	makesATriple, _ := findTriples(newGrid)
 
 	if makesATriple {
-		// mark row to be deleted as EMPTY_GEM
-		for x, _ := range l.gemGrid[row] {
-			l.gemGrid[row][x].gem = EMPTY_GEM
+		// mark rows for deletion
+		for i := 0; i < numRows; i++ {
+			row := l.cursorGem.y + i
+			if row >= len(l.gemGrid) {
+				break
+			}
+			for x, _ := range l.gemGrid[row] {
+				l.gemGrid[row][x].gem = EMPTY_GEM
+			}
 		}
 	} else {
 		PlaySound(failOgg)
 		// penalize player for invalid move
 		// mark row to be deleted as EMPTY_GEM
-		for x, _ := range l.gemGrid[row] {
-			l.triplesMask[row][x] = false
+		for x, _ := range l.gemGrid[l.cursorGem.y] {
+			l.triplesMask[l.cursorGem.y][x] = false
 		}
 		return false
 	}
@@ -439,9 +450,20 @@ func handleKeyDeleteRows(l *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 	switch key {
 	case ebiten.KeyD:
 		if equals(tail(globalKeys, 2), []ebiten.Key{ebiten.KeyD, ebiten.KeyD}) {
-			deleteCurrentRow(l, frameCount)
+			deleteRows(l, 1, frameCount)
+			clearKeystrokes()
 		}
-		clearKeystrokes()
+	case ebiten.KeyEnter:
+		t := tail(globalKeys, 3)
+		if len(t) > 1 {
+			if t[0] == ebiten.KeyD {
+				n := t[1] - ebiten.Key0
+				if n > 0 && n < 10 {
+					deleteRows(l, int(n), frameCount)
+					clearKeystrokes()
+				}
+			}
+		}
 	case ebiten.KeyH:
 		l.cursorGem.x = max(l.cursorGem.x-1, 0)
 		clearKeystrokes()

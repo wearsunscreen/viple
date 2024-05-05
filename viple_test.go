@@ -22,49 +22,6 @@ func TestLimitToRange(t *testing.T) {
 	}
 }
 
-func TestRemoveDuplicates(t *testing.T) {
-	tests := []struct {
-		name string
-		in   []int
-		want []int
-	}{
-		{
-			name: "No duplicates",
-			in:   []int{1, 2, 3, 4, 5},
-			want: []int{1, 2, 3, 4, 5},
-		},
-		{
-			name: "With duplicates",
-			in:   []int{1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5},
-			want: []int{1, 2, 3, 4, 5},
-		},
-		{
-			name: "With duplicates/unsorted",
-			in:   []int{4, 4, 5, 2, 3, 1, 2, 3, 3, 4, 4, 5, 5, 5, 5},
-			want: []int{4, 5, 2, 3, 1},
-		},
-		{
-			name: "All duplicates",
-			in:   []int{1, 1, 1, 1, 1},
-			want: []int{1},
-		},
-		{
-			name: "Empty slice",
-			in:   []int{},
-			want: []int{},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			removeDuplicates(&tt.in)
-			if !reflect.DeepEqual(tt.in, tt.want) {
-				t.Errorf("removeDuplicates() = %v, want %v", tt.in, tt.want)
-			}
-		})
-	}
-}
-
 func TestRemoveDuplicatesOf(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -114,7 +71,7 @@ func TestRemoveDuplicatesOf(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			removeDuplicatesOf(&tt.in, tt.value)
 			if !reflect.DeepEqual(tt.in, tt.want) {
-				t.Errorf("removeDuplicates() = %v, want %v", tt.in, tt.want)
+				t.Errorf("removeDuplicatesOf() = %v, want %v", tt.in, tt.want)
 			}
 		})
 	}

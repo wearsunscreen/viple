@@ -105,8 +105,8 @@ func (g *Game) Update() error {
 	var err error
 	g.frameCount++
 
-	// save the keys that are currently pressed
-	globalKeys = inpututil.AppendPressedKeys(globalKeys)
+	// save the keys that were pressed in this frame
+	globalKeys = inpututil.AppendJustPressedKeys(globalKeys)
 
 	switch g.mode {
 	case IntroMode:
@@ -292,19 +292,6 @@ func newGame() *Game {
 	return &g
 }
 
-func removeDuplicates[T comparable](s *[]T) {
-	found := make(map[T]bool)
-	j := 0
-	for i, x := range *s {
-		if !found[x] {
-			found[x] = true
-			(*s)[j] = (*s)[i]
-			j++
-		}
-	}
-	*s = (*s)[:j]
-}
-
 // removeDuplicatesOf removes all duplicates of a specified value from a slice.
 func removeDuplicatesOf[T comparable](s *[]T, value T) {
 	found := false
@@ -383,8 +370,6 @@ func showIntroDialog(g *Game) {
 		widget.ButtonOpts.Image(g.uiRes.button.image),
 		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
 		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
-		// widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
-		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			advanceLevelMode(g)
@@ -439,8 +424,6 @@ func showOutroDialog(g *Game) {
 		widget.ButtonOpts.Image(g.uiRes.button.image),
 		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
 		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
-		// widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
-		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			advanceLevelMode(g)
