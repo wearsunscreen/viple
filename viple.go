@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
@@ -62,6 +63,7 @@ type Game struct {
 	curLevel     Level
 	mode         LevelMode
 	frameCount   int
+	lastUpdate   time.Time
 	ui           *ebitenui.UI
 	uiRes        *uiResources
 }
@@ -100,9 +102,20 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func (g *Game) Update() error {
-
 	var levelOver bool
 	var err error
+
+	// Get the current time
+	now := time.Now()
+	if !g.lastUpdate.IsZero() {
+		elapsed := now.Sub(g.lastUpdate)
+		if elapsed > time.Millisecond*50 {
+			fmt.Printf("Time since last update: %v\n", elapsed)
+		}
+	}
+	g.lastUpdate = now
+
+	// increment the frame count
 	g.frameCount++
 
 	// save the keys that were pressed in this frame
