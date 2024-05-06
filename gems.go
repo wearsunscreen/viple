@@ -22,7 +22,7 @@ const (
 	dropDuration  = 60
 	gemScale      = float64(gemCellSize-4) / float64(gemWidth)
 	gemWidth      = 100
-	gemRows       = 11
+	numGemRows    = 11
 	swapDuration  = 40
 )
 
@@ -35,7 +35,7 @@ type LevelGemsVisualMode struct {
 	mode        int
 	numGems     int
 	swapGem     Point
-	triplesMask [][]bool
+	triplesMask Grid[bool]
 }
 
 var numGemColumns int
@@ -54,7 +54,7 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	// draw background of triples
 	for y, row := range l.gemGrid {
 		for x := range row {
-			if l.triplesMask[y][x] {
+			if l.triplesMask.Get(Point{x, y}) {
 				l.gemGrid[y][x].drawBackground(screen, darkButter)
 			}
 		}
@@ -111,9 +111,9 @@ func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 		l.numGems = 4
 		numGemColumns = 8
 	}
-	l.cursorGem = Point{numGemColumns / 2, gemRows / 2}
+	l.cursorGem = Point{numGemColumns / 2, numGemRows / 2}
 	l.swapGem = Point{-1, -1}
-	l.gemGrid = make([][]Square, gemRows)
+	l.gemGrid = make([][]Square, numGemRows)
 	for y := range l.gemGrid {
 		l.gemGrid[y] = make([]Square, numGemColumns)
 	}
@@ -124,10 +124,7 @@ func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 		}
 	}
 
-	l.triplesMask = make([][]bool, gemRows)
-	for i := range l.triplesMask {
-		l.triplesMask[i] = make([]bool, numGemColumns)
-	}
+	l.triplesMask = NewGridOfBools(numGemColumns, numGemRows)
 
 	l.mode = NormalMode
 	fillRandom(l)
@@ -167,6 +164,61 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+/*
+	==================================
+
+/* ==================================
+
+	Grid methods
+
+/* ==================================
+/* ==================================
+*/
+type Grid[T comparable] struct {
+	rows [][]T
+}
+
+func (g *Grid[T]) Copy() Grid[T] {
+	clone := make([][]T, len(g.rows))
+	for i := range g.rows {
+		clone[i] = make([]T, len(g.rows[i]))
+		copy(clone[i], g.rows[i])
+	}
+	return Grid[T]{rows: clone}
+}
+
+func NewGridOfBools(width, height int) Grid[bool] {
+	rows := make([][]bool, height)
+	for i := range rows {
+		rows[i] = make([]bool, width)
+	}
+	return Grid[bool]{rows: rows}
+}
+
+func (g *Grid[T]) Get(p Point) T {
+	return g.rows[p.y][p.x]
+}
+
+func (g *Grid[T]) GetAtIndex(index int) T {
+	return g.rows[index/g.WidthOf()][index%g.WidthOf()]
+}
+
+func (g *Grid[T]) HeightOf() int {
+	return len(g.rows)
+}
+
+func (g *Grid[T]) WidthOf() int {
+	return len(g.rows[0])
+}
+
+func (g *Grid[T]) Set(p Point, value T) {
+	g.rows[p.y][p.x] = value
+}
+
+func (g *Grid[T]) SetAtIndex(index int, value T) {
+	g.rows[index/g.WidthOf()][index%g.WidthOf()] = value
 }
 
 /* ==================================
@@ -276,7 +328,7 @@ func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 		// penalize player for invalid move
 		// mark row to be deleted as EMPTY_GEM
 		for x, _ := range l.gemGrid[l.cursorGem.y] {
-			l.triplesMask[l.cursorGem.y][x] = false
+			l.triplesMask.Set(Point{x, l.cursorGem.y}, false)
 		}
 		return false
 	}
@@ -328,7 +380,7 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 		// penalize player for invalid move
 		// mark row to be deleted as EMPTY_GEM
 		for x, _ := range l.gemGrid[l.cursorGem.y] {
-			l.triplesMask[l.cursorGem.y][x] = false
+			l.triplesMask.Set(Point{x, l.cursorGem.y}, false)
 		}
 		return false
 	}
@@ -340,8 +392,8 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 func dropSquares(gemGrid [][]Square) {
 	// find empty square and move squares from above down to fill
 	for x := range numGemColumns {
-		for y := range gemRows {
-			y = gemRows - 1 - y // work from bottom up
+		for y := range numGemRows {
+			y = numGemRows - 1 - y // work from bottom up
 			if gemGrid[y][x].gem == EMPTY_GEM {
 				above := findSquareAbove(gemGrid, Point{x, y})
 				if above.y >= 0 {
@@ -357,7 +409,7 @@ func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 	// for each column
 	for x := range numGemColumns {
 		// find empty square and move squares from below to fill
-		for y := 0; y < gemRows; y++ {
+		for y := 0; y < numGemRows; y++ {
 			if l.gemGrid[y][x].gem == EMPTY_GEM {
 				below := findSquareBelow(l.gemGrid, Point{x, y})
 				if below.y >= 0 {
@@ -373,12 +425,12 @@ func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 
 	// fill empties at the bottom of the gemGrid with newly generated gems
 	for x := range numGemColumns {
-		for y := range gemRows {
+		for y := range numGemRows {
 			if l.gemGrid[y][x].gem == EMPTY_GEM {
 				l.gemGrid[y][x].gem = rng.Intn(l.numGems)
 				// l.gemGrid[y][x].point.y = gemCellSize*gemRows + 1
 				l.gemGrid[y][x].AddMover(frameCount, dropDuration,
-					Point{l.gemGrid[y][x].point.x, gemCellSize*gemRows + 1},
+					Point{l.gemGrid[y][x].point.x, gemCellSize*numGemRows + 1},
 					l.gemGrid[y][x].point)
 			}
 		}
@@ -405,7 +457,7 @@ func findSquareAbove(gemGrid [][]Square, p Point) Point {
 }
 
 func findSquareBelow(gemGrid [][]Square, p Point) Point {
-	for y := p.y; y < gemRows; y++ {
+	for y := p.y; y < numGemRows; y++ {
 		if gemGrid[y][p.x].gem != EMPTY_GEM {
 			return Point{p.x, y}
 		}
@@ -414,7 +466,7 @@ func findSquareBelow(gemGrid [][]Square, p Point) Point {
 }
 func findTriples(gemGrid [][]Square) (bool, [][]bool) {
 	// create a local mask to mark all square that are in triples
-	mask := make([][]bool, gemRows)
+	mask := make([][]bool, numGemRows)
 	for i := range mask {
 		mask[i] = make([]bool, len(gemGrid[0]))
 	}
@@ -474,7 +526,7 @@ func handleKeyDeleteRows(l *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 		l.cursorGem.y = max(l.cursorGem.y-1, 0)
 		clearKeystrokes()
 	case ebiten.KeyJ:
-		l.cursorGem.y = min(l.cursorGem.y+1, gemRows-1)
+		l.cursorGem.y = min(l.cursorGem.y+1, numGemRows-1)
 		clearKeystrokes()
 	case ebiten.KeyV:
 		// entering VisualMode (where we do swaps)
@@ -496,7 +548,7 @@ func handleKeyVisualMode(l *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 		l.swapGem.y = max(l.swapGem.y-1, 0)
 		clearKeystrokes()
 	case ebiten.KeyJ:
-		l.swapGem.y = min(l.swapGem.y+1, gemRows-1)
+		l.swapGem.y = min(l.swapGem.y+1, numGemRows-1)
 		clearKeystrokes()
 	case ebiten.KeyV:
 		PlaySound(failOgg)
@@ -551,7 +603,7 @@ func highLow(p1, p2 Point) (Point, Point) {
 func (l *LevelGemsVisualMode) gameIsWon() bool {
 	for y, row := range l.gemGrid {
 		for x := range row {
-			if !l.triplesMask[y][x] {
+			if !l.triplesMask.Get(Point{x, y}) {
 				return false
 			}
 		}
@@ -575,7 +627,7 @@ func squareToScreenPoint(squareXY Point) Point {
 	widthOfGrid := gemCellSize * numGemColumns
 	xMargin := (screenWidth - widthOfGrid) / 2
 	// get top y
-	heightOfGrid := gemCellSize * gemRows
+	heightOfGrid := gemCellSize * numGemRows
 	yMargin := (screenHeight - heightOfGrid) / 2
 	return Point{
 		gemCellSize*squareXY.x + xMargin,
@@ -627,7 +679,7 @@ func updateTriples(l *LevelGemsVisualMode, frameCount int) {
 			for x := range row {
 				if mask[y][x] {
 					l.gemGrid[y][x].gem = -1
-					l.triplesMask[y][x] = true
+					l.triplesMask.Set(Point{x, y}, true)
 				}
 			}
 		}
