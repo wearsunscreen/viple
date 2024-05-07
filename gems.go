@@ -38,6 +38,13 @@ type LevelGemsVisualMode struct {
 	triplesMask Grid[bool]
 }
 
+type GemMover struct {
+	startFrame int
+	endFrame   int
+	startPoint Point // grid coordinates
+	endPoint   Point // grid coordinates
+}
+
 var numGemColumns int
 
 /* ==================================
@@ -166,7 +173,7 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 
 type Square struct {
 	gem    int
-	mover  *Mover
+	mover  *GemMover
 	coords Point // position in the grid
 }
 
@@ -183,7 +190,7 @@ func NewGridOfSquares(width, height int) Grid[Square] {
 
 func (square *Square) AddMover(startFrame int, duration int, from Point, to Point) {
 	// add animation
-	mover := new(Mover)
+	mover := new(GemMover)
 
 	mover.startFrame = startFrame
 	mover.endFrame = startFrame + duration
@@ -221,7 +228,7 @@ func (square *Square) drawGem(screen *ebiten.Image, gemImage *ebiten.Image, fram
 /* ==================================
 */
 
-func applyMover(mover *Mover, op *ebiten.DrawImageOptions, frameCount int) {
+func applyMover(mover *GemMover, op *ebiten.DrawImageOptions, frameCount int) {
 	completionRatio := 1 - float64(mover.endFrame-frameCount)/float64(mover.endFrame-mover.startFrame)
 	startPosition := squareToScreenPoint(mover.startPoint)
 	endPosition := squareToScreenPoint(mover.endPoint)
@@ -258,17 +265,15 @@ func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 	makesATriple, _ := findTriples(newGrid)
 
 	if makesATriple {
-		// mark rows for deletion
-		for i := 0; i < l.gemGrid.NumRows(); i++ {
+		// mark squares in deleted rows as EMPTY_GEM
+		for i := 0; i < numRows; i++ {
 			row := l.cursorGem.y + i
 			if row >= l.gemGrid.NumRows() {
 				break
 			}
 			for x := range l.gemGrid.NumColumns() {
 				p := Point{x, row}
-				sq := l.gemGrid.Get(p)
-				sq.gem = EMPTY_GEM
-				l.gemGrid.Set(p, sq)
+				SetGem(&l.gemGrid, p, EMPTY_GEM)
 			}
 		}
 	} else {
@@ -388,7 +393,7 @@ func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 				sqPtr := l.gemGrid.GetPtr(Point{x, y})
 				sqPtr.gem = rng.Intn(l.numGems)
 				sqPtr.AddMover(frameCount, dropDuration,
-					Point{sqPtr.coords.x, gemCellSize*numGemRows + 1},
+					Point{sqPtr.coords.x, numGemRows + 1},
 					Point{x, y})
 			}
 		}

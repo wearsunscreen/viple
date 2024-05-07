@@ -9,10 +9,3 @@ type Drawable interface {
 	Draw(screen *ebiten.Image, frameCount int)
 	AddMover(startFrame int, duration int, from Point, to Point)
 }
-
-type Mover struct {
-	startFrame int
-	endFrame   int
-	startPoint Point
-	endPoint   Point
-}
