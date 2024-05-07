@@ -31,6 +31,7 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 
 ## Refactoring
 - Isolate ebiten code from game logic
+- Make Grid a package
 
 ## Known Defects
 

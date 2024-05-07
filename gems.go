@@ -303,38 +303,27 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 	newGrid := l.gemGrid.Copy()
 
 	// set all selected squares to EMPTY_GEM
-	cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
-	startX := cursorStart.x
-	for y := cursorStart.y; y <= cursorEnd.y; y++ {
-		for x := startX; x < numGemColumns; x++ {
-			sq := newGrid.Get(Point{x, y})
-			sq.gem = EMPTY_GEM
-			newGrid.Set(Point{x, y}, sq)
-			if x == cursorEnd.x && y == cursorEnd.y {
-				break
-			}
-			// start next line at left edge
-			startX = 0
+	selectionStart, selectionEnd := highLow(l.cursorGem, l.swapGem)
+	dest := newGrid.IndexOf(selectionStart)
+	src := newGrid.IndexOf(selectionEnd) + 1
+
+	var gem int
+	// move squares past selection into the selection
+	for i := dest; i < newGrid.LastIndex(); i++ {
+		if src >= newGrid.LastIndex() {
+			gem = EMPTY_GEM
+		} else {
+			gem = newGrid.GetAtIndex(src).gem
 		}
+		SetGem(&newGrid, newGrid.IndexToPoint(i), gem)
+		src++
 	}
-	dropSquares(&newGrid)
+
 	// check if the swap will create a triple
-	makesATriple, _ := findTriples(l.gemGrid)
+	makesATriple, _ := findTriples(newGrid)
 
 	if makesATriple {
-		// set all selected squares to EMPTY_GEM
-		cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
-		startX := cursorStart.x
-		for y := cursorStart.y; y <= cursorEnd.y; y++ {
-			for x := startX; x < numGemColumns; x++ {
-				SetGem(&l.gemGrid, Point{x, y}, EMPTY_GEM)
-				if x == cursorEnd.x && y == cursorEnd.y {
-					break
-				}
-				// start next line at left edge
-				startX = 0
-			}
-		}
+		l.gemGrid = newGrid
 	} else {
 		PlaySound(failOgg)
 		// penalize player for invalid move
@@ -344,26 +333,21 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 		}
 		return false
 	}
-	fillEmpties(l, frameCount)
-	return true
-}
 
-// move squares down to fill empty squares
-func dropSquares(gemGrid *Grid[Square]) {
-	// find empty square and move squares from above down to fill
-	for x := range gemGrid.NumRows() {
-		for y := range gemGrid.NumColumns() {
-			y = gemGrid.NumRows() - 1 - y // work from bottom up
-			if gemGrid.Get(Point{x, y}).gem == EMPTY_GEM {
-				destPt := Point{x, y}
-				above := findSquareAbove(gemGrid, destPt)
-				if above.y >= 0 {
-					SetGem(gemGrid, destPt, gemGrid.Get(above).gem)
-					SetGem(gemGrid, above, EMPTY_GEM)
-				}
+	// note this is identical to bottom of fillEmpties()
+	// fill empties at the bottom of the gemGrid with newly generated gems
+	for x := range numGemColumns {
+		for y := range numGemRows {
+			if l.gemGrid.Get(Point{x, y}).gem == EMPTY_GEM {
+				sqPtr := l.gemGrid.GetPtr(Point{x, y})
+				sqPtr.gem = rng.Intn(l.numGems)
+				sqPtr.AddMover(frameCount, dropDuration,
+					Point{sqPtr.coords.x, numGemRows + 1},
+					Point{x, y})
 			}
 		}
 	}
+	return true
 }
 
 func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
@@ -398,7 +382,6 @@ func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
 			}
 		}
 	}
-
 }
 
 // fills the entire gemGrid with random gems

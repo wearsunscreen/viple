@@ -14,6 +14,10 @@ type Grid[T comparable] struct {
 	rows [][]T
 }
 
+type Point struct {
+	x, y int
+}
+
 func NewGridOfBools(width, height int) Grid[bool] {
 	r := make([][]bool, height)
 	for i := range r {
@@ -41,6 +45,18 @@ func (g *Grid[T]) ForEach(f func(p Point, value T)) {
 			f(Point{x, y}, g.rows[y][x])
 		}
 	}
+}
+
+func (g *Grid[T]) IndexOf(p Point) int {
+	return p.y*g.NumColumns() + p.x
+}
+
+func (g *Grid[T]) IndexToPoint(index int) Point {
+	return Point{index % g.NumColumns(), index / g.NumColumns()}
+}
+
+func (g *Grid[T]) LastIndex() int {
+	return g.NumColumns()*g.NumRows() - 1
 }
 
 func (g *Grid[T]) SetAll(value T) {
@@ -84,15 +100,4 @@ func (g *Grid[T]) Set(p Point, value T) {
 
 func (g *Grid[T]) SetAtIndex(index int, value T) {
 	g.rows[index/g.WidthOf()][index%g.WidthOf()] = value
-}
-
-/* ==================================
-/* ==================================
-	Point methods
-/* ==================================
-/* ==================================
-*/
-
-type Point struct {
-	x, y int
 }
