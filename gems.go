@@ -302,21 +302,23 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 	// copy the gem grid to test if removing the selected squares will result in a triple
 	newGrid := l.gemGrid.Copy()
 
-	// set all selected squares to EMPTY_GEM
-	selectionStart, selectionEnd := highLow(l.cursorGem, l.swapGem)
-	dest := newGrid.IndexOf(selectionStart)
-	src := newGrid.IndexOf(selectionEnd) + 1
+	{
+		// set all selected squares to EMPTY_GEM
+		selectionStart, selectionEnd := highLow(l.cursorGem, l.swapGem)
+		dest := newGrid.IndexOf(selectionStart)
+		src := newGrid.IndexOf(selectionEnd) + 1
 
-	var gem int
-	// move squares past selection into the selection
-	for i := dest; i < newGrid.LastIndex(); i++ {
-		if src >= newGrid.LastIndex() {
-			gem = EMPTY_GEM
-		} else {
-			gem = newGrid.GetAtIndex(src).gem
+		var gem int
+		// move squares past selection into the selection
+		for i := dest; i < newGrid.LastIndex(); i++ {
+			if src >= newGrid.LastIndex() {
+				gem = EMPTY_GEM
+			} else {
+				gem = newGrid.GetAtIndex(src).gem
+			}
+			SetGem(&newGrid, newGrid.IndexToPoint(i), gem)
+			src++
 		}
-		SetGem(&newGrid, newGrid.IndexToPoint(i), gem)
-		src++
 	}
 
 	// check if the swap will create a triple
