@@ -324,10 +324,16 @@ func removeDuplicatesOf[T comparable](s *[]T, value T) {
 func seedRNG(seed int64) {
 	if seed == 0 {
 		seed = time.Now().UnixNano() % 10000
+		seed = 11
 	}
 	log.Println("Random seed is ", seed)
 	rng = rand.New(rand.NewSource(seed))
 }
+
+var (
+	dlgBackground = darkButter
+	dlgText       = color.White
+)
 
 func showIntroDialog(g *Game) {
 	// This loads a font and creates a font face.
@@ -346,7 +352,7 @@ func showIntroDialog(g *Game) {
 		Size: 32,
 	})
 	innerContainer := widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(dlgBackground)),
 		// the container will use an anchor layout to layout its single child widget
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			//Define number of columns in the grid
@@ -363,12 +369,12 @@ func showIntroDialog(g *Game) {
 	g.ui.Container.AddChild(innerContainer)
 
 	titleText := widget.NewText(
-		widget.TextOpts.Text(GetTitleText(int(g.currentLevel)), titleFace, color.White),
+		widget.TextOpts.Text(GetTitleText(int(g.currentLevel)), titleFace, dlgText),
 	)
 	innerContainer.AddChild(titleText)
 
 	level1IntroText := widget.NewText(
-		widget.TextOpts.Text(GetIntroText(int(g.currentLevel)), textFace, color.White),
+		widget.TextOpts.Text(GetIntroText(int(g.currentLevel)), textFace, dlgText),
 	)
 	innerContainer.AddChild(level1IntroText)
 
@@ -405,7 +411,7 @@ func showOutroDialog(g *Game) {
 		Size: 32,
 	})
 	innerContainer := widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(dlgBackground)),
 		// the container will use an anchor layout to layout its single child widget
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			//Define number of columns in the grid

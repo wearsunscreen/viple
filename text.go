@@ -3,8 +3,8 @@ package main
 /*
 	LevelIdFlappy = iota
 	LevelIdBricksHL
-	LevelIdGemsDD
 	LevelIdBricksHJKL
+	LevelIdGemsDD
 	LevelIdGemsVM
 */
 
@@ -43,6 +43,7 @@ match up three jewels you'll lose gold!`,
 
 Press V to enter visual and the navigation keys (H,J,K,L)
 to select jewels. Press D to delete the selection.
+Escape to exit visual mode.kjjl
 
 Make sure deleting connects three identical jewels!`,
 }

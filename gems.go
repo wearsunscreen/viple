@@ -61,7 +61,7 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	// draw background of triples
 	l.gemGrid.ForEach(func(p Point, s Square) {
 		if l.triplesMask.Get(p) {
-			s.drawBackground(screen, darkButter)
+			s.drawBackground(screen, lightGold)
 		}
 	})
 
@@ -73,7 +73,7 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	case LevelIdGemsVM:
 		// we are in swap mode, faster blink, brighter colors
 		blink = frameCount / (blinkInverval / 2) % 2
-		cursorColors = [2]color.Color{brightRed, lightButter}
+		cursorColors = [2]color.Color{brightRed, mediumButter}
 
 		// draw visualmode cursor
 		if l.mode == VisualMode {
@@ -285,7 +285,7 @@ func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 		}
 		return false
 	}
-	fillEmpties(l, frameCount)
+	fillEmpties(l, frameCount, true)
 	return true
 }
 
@@ -295,9 +295,73 @@ func SetGem(grid *Grid[Square], pt Point, gem int) {
 	grid.Set(pt, sq)
 }
 
+// Set all gems in a selection to a value
+func setSelection(gemGrid *Grid[Square], p1, p2 Point, gem int) {
+	cursorStart, cursorEnd := highLow(p1, p2)
+	startX := cursorStart.x
+	for y := cursorStart.y; y <= cursorEnd.y; y++ {
+		for x := startX; x < numGemColumns; x++ {
+			SetGem(gemGrid, Point{x, y}, emptyGem)
+			if x == cursorEnd.x && y == cursorEnd.y {
+				break
+			}
+			// start next line at left edge
+			startX = 0
+		}
+	}
+}
+
 // Delete all gems selected in visual mode.
 // If it does nor result in a triple the delete will fail and restore to original state.
-func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
+func deleteSelectionVertically(l *LevelGemsVisualMode, frameCount int) bool {
+
+	// copy the gem grid to test if removing the selected squares will result in a triple
+	newGrid := l.gemGrid.Copy()
+
+	// set all selected squares to EMPTY_GEM
+	setSelection(&newGrid, l.cursorGem, l.swapGem, emptyGem)
+	moveUpFromBelow(&newGrid, frameCount, false)
+
+	// check if the swap will create a triple
+	makesATriple, _ := findTriples(newGrid)
+	// makesATriple = true // Bugbug: this is a hack to make the game easier
+
+	if makesATriple {
+		// set all selected squares to EMPTY_GEM
+		setSelection(&l.gemGrid, l.cursorGem, l.swapGem, emptyGem)
+	} else {
+		PlaySound(failOgg)
+		// penalize player for invalid move
+		// mark row to be deleted as EMPTY_GEM
+		for x := range l.gemGrid.NumColumns() {
+			l.triplesMask.Set(Point{x, l.cursorGem.y}, false)
+		}
+		return false
+	}
+	fillEmpties(l, frameCount, true)
+	return true
+}
+
+// move squares down to fill empty squares
+func dropSquares(gemGrid Grid[Square]) {
+	// find empty square and move squares from above down to fill
+	for x := range numGemColumns {
+		for y := range numGemRows {
+			y = numGemRows - 1 - y // work from bottom up
+			if gemGrid.Get(Point{x, y}).gem == emptyGem {
+				below := findSquareBelow(&gemGrid, Point{x, y})
+				if below.y >= 0 {
+					SetGem(&gemGrid, Point{x, y}, gemGrid.Get(below).gem)
+					SetGem(&gemGrid, below, emptyGem)
+				}
+			}
+		}
+	}
+}
+
+// Delete all gems selected in visual mode.
+// If it does nor result in a triple the delete will fail and restore to original state.
+func deleteSelectionTextually(l *LevelGemsVisualMode, frameCount int) bool {
 	// copy the gem grid to test if removing the selected squares will result in a triple
 	newGrid := l.gemGrid.Copy()
 
@@ -370,35 +434,46 @@ func deleteSelection(l *LevelGemsVisualMode, frameCount int) bool {
 	return true
 }
 
-func fillEmpties(l *LevelGemsVisualMode, frameCount int) {
+func fillEmpties(l *LevelGemsVisualMode, frameCount int, addMover bool) {
+	moveUpFromBelow(&l.gemGrid, frameCount, addMover)
+	fillFromBelow(&l.gemGrid, l.numGems, frameCount, addMover)
+}
+
+// move gems from below to fill in empty squares
+func moveUpFromBelow(gemGrid *Grid[Square], frameCount int, addMover bool) {
 	// for each column
 	for x := range numGemColumns {
 		// find empty square and move squares from below to fill
 		for y := 0; y < numGemRows; y++ {
 			pt := Point{x, y}
-			if l.gemGrid.Get(pt).gem == emptyGem {
-				below := findSquareBelow(&l.gemGrid, pt)
+			if gemGrid.Get(pt).gem == emptyGem {
+				below := findSquareBelow(gemGrid, pt)
 				if below.y >= 0 {
-					sqPtr := l.gemGrid.GetPtr(pt)
-					sqPtr.gem = l.gemGrid.Get(below).gem
-					sqPtr = l.gemGrid.GetPtr(below)
+					sqPtr := gemGrid.GetPtr(pt)
+					sqPtr.gem = gemGrid.Get(below).gem
+					sqPtr = gemGrid.GetPtr(below)
 					sqPtr.gem = emptyGem
-					sqPtr = l.gemGrid.GetPtr(pt)
+					sqPtr = gemGrid.GetPtr(pt)
 					sqPtr.AddMover(frameCount, dropDuration, below, pt)
 				}
 			}
 		}
 	}
+}
 
+// generate new gems to fill in empty squares at the bottom
+func fillFromBelow(gemGrid *Grid[Square], numGems, frameCount int, addMover bool) {
 	// fill empties at the bottom of the gemGrid with newly generated gems
 	for x := range numGemColumns {
 		for y := range numGemRows {
-			if l.gemGrid.Get(Point{x, y}).gem == emptyGem {
-				sqPtr := l.gemGrid.GetPtr(Point{x, y})
-				sqPtr.gem = rng.Intn(l.numGems)
-				sqPtr.AddMover(frameCount, dropDuration,
-					Point{sqPtr.coords.x, numGemRows + 1},
-					Point{x, y})
+			if gemGrid.Get(Point{x, y}).gem == emptyGem {
+				sqPtr := gemGrid.GetPtr(Point{x, y})
+				sqPtr.gem = rng.Intn(numGems)
+				if addMover {
+					sqPtr.AddMover(frameCount, dropDuration,
+						Point{sqPtr.coords.x, numGemRows + 1},
+						Point{x, y})
+				}
 			}
 		}
 	}
@@ -529,18 +604,16 @@ func handleKeyVisualMode(l *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 		l.cursorGem = l.swapGem
 		l.swapGem = Point{-1, -1}
 		clearKeystrokes()
-	case ebiten.KeyY:
+	case ebiten.KeyD:
 		// attempt swap
-		if l.swapGem.x != -1 && l.swapGem != l.cursorGem {
-			if result := deleteSelection(l, frameCount); result {
-				// swap successful
-				// exiting visual mode
-				l.mode = NormalMode
-				l.cursorGem = l.swapGem
-				l.swapGem = Point{-1, -1}
-			} else {
-				PlaySound(failOgg)
-			}
+		if result := deleteSelectionVertically(l, frameCount); result {
+			// swap successful
+			// exiting visual mode
+			l.mode = NormalMode
+			l.cursorGem = l.swapGem
+			l.swapGem = Point{-1, -1}
+		} else {
+			PlaySound(failOgg)
 		}
 		clearKeystrokes()
 	}
@@ -622,7 +695,7 @@ func updateTriples(l *LevelGemsVisualMode, frameCount int) {
 		// play triple sound unless the level is complete
 		if !l.gameIsWon() {
 			PlaySound(tripleOgg)
-			fillEmpties(l, frameCount)
+			fillEmpties(l, frameCount, true)
 		}
 	}
 }
