@@ -189,7 +189,7 @@ func NewGridOfSquares(width, height int) Grid[Square] {
 			r[i][j] = Square{coords: Coord{j, i}}
 		}
 	}
-	return Grid[Square]{rows: r}
+	return r
 }
 
 func (square *Square) AddMover(startFrame int, duration int, from Coord, to Coord) {
@@ -252,7 +252,7 @@ func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 		if row >= newGrid.NumRows() {
 			break
 		}
-		newGrid.deleteRow(row)
+		newGrid.DeleteRow(row)
 	}
 
 	// check if the swap will create a triple
