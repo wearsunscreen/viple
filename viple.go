@@ -62,6 +62,7 @@ type Game struct {
 	curLevel     Level
 	mode         LevelMode
 	frameCount   int
+	lastUpdate   time.Time
 	ui           *ebitenui.UI
 	uiRes        *uiResources
 }
@@ -100,13 +101,24 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func (g *Game) Update() error {
-
 	var levelOver bool
 	var err error
+
+	// for profiling
+	now := time.Now()
+	// if !g.lastUpdate.IsZero() {
+	// 	elapsed := now.Sub(g.lastUpdate)
+	// 	if elapsed > time.Millisecond*50 {
+	// 		fmt.Printf("Time since last update: %v\n", elapsed)
+	// 	}
+	// }
+	g.lastUpdate = now
+
+	// increment the frame count
 	g.frameCount++
 
-	// save the keys that are currently pressed
-	globalKeys = inpututil.AppendPressedKeys(globalKeys)
+	// save the keys that were pressed in this frame
+	globalKeys = inpututil.AppendJustPressedKeys(globalKeys)
 
 	switch g.mode {
 	case IntroMode:
@@ -189,6 +201,18 @@ func advanceLevelMode(g *Game) {
 
 func clearKeystrokes() {
 	globalKeys = globalKeys[:0]
+}
+
+func equals[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func isCheatKeyPressed() bool {
@@ -280,19 +304,6 @@ func newGame() *Game {
 	return &g
 }
 
-func removeDuplicates[T comparable](s *[]T) {
-	found := make(map[T]bool)
-	j := 0
-	for i, x := range *s {
-		if !found[x] {
-			found[x] = true
-			(*s)[j] = (*s)[i]
-			j++
-		}
-	}
-	*s = (*s)[:j]
-}
-
 // removeDuplicatesOf removes all duplicates of a specified value from a slice.
 func removeDuplicatesOf[T comparable](s *[]T, value T) {
 	found := false
@@ -317,6 +328,11 @@ func seedRNG(seed int64) {
 	rng = rand.New(rand.NewSource(seed))
 }
 
+var (
+	dlgBackground = darkButter
+	dlgText       = color.White
+)
+
 func showIntroDialog(g *Game) {
 	// This loads a font and creates a font face.
 	ttfFont, err := truetype.Parse(goregular.TTF)
@@ -328,13 +344,13 @@ func showIntroDialog(g *Game) {
 	g.ui.Container.RemoveChildren()
 
 	textFace := truetype.NewFace(ttfFont, &truetype.Options{
-		Size: 16,
+		Size: 20,
 	})
 	titleFace := truetype.NewFace(ttfFont, &truetype.Options{
 		Size: 32,
 	})
 	innerContainer := widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(dlgBackground)),
 		// the container will use an anchor layout to layout its single child widget
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			//Define number of columns in the grid
@@ -351,12 +367,12 @@ func showIntroDialog(g *Game) {
 	g.ui.Container.AddChild(innerContainer)
 
 	titleText := widget.NewText(
-		widget.TextOpts.Text(GetTitleText(int(g.currentLevel)), titleFace, color.White),
+		widget.TextOpts.Text(GetTitleText(int(g.currentLevel)), titleFace, dlgText),
 	)
 	innerContainer.AddChild(titleText)
 
 	level1IntroText := widget.NewText(
-		widget.TextOpts.Text(GetIntroText(int(g.currentLevel)), textFace, color.White),
+		widget.TextOpts.Text(GetIntroText(int(g.currentLevel)), textFace, dlgText),
 	)
 	innerContainer.AddChild(level1IntroText)
 
@@ -371,8 +387,6 @@ func showIntroDialog(g *Game) {
 		widget.ButtonOpts.Image(g.uiRes.button.image),
 		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
 		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
-		// widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
-		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			advanceLevelMode(g)
@@ -395,7 +409,7 @@ func showOutroDialog(g *Game) {
 		Size: 32,
 	})
 	innerContainer := widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(mediumButter)),
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(dlgBackground)),
 		// the container will use an anchor layout to layout its single child widget
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			//Define number of columns in the grid
@@ -427,13 +441,18 @@ func showOutroDialog(g *Game) {
 		widget.ButtonOpts.Image(g.uiRes.button.image),
 		widget.ButtonOpts.Text("Ok", g.uiRes.button.face, g.uiRes.button.text),
 		widget.ButtonOpts.TextPadding(g.uiRes.button.padding),
-		// widget.ButtonOpts.CursorEnteredHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Entered: " + args.Button.Text().Label) }),
-		// widget.ButtonOpts.CursorExitedHandler(func(args *widget.ButtonHoverEventArgs) { fmt.Println("Cursor Exited: " + args.Button.Text().Label) }),
 		// add a handler that reacts to clicking the button
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			advanceLevelMode(g)
 		}),
 	)
 	innerContainer.AddChild(b)
+}
 
+// tail returns the last n elements of a slice.
+func tail[T comparable](slice []T, n int) []T {
+	if n > len(slice) {
+		n = len(slice)
+	}
+	return slice[len(slice)-n:]
 }
