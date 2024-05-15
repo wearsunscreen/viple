@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"image/color"
 	_ "image/png"
 	"log"
@@ -105,14 +104,14 @@ func (g *Game) Update() error {
 	var levelOver bool
 	var err error
 
-	// Get the current time
+	// for profiling
 	now := time.Now()
-	if !g.lastUpdate.IsZero() {
-		elapsed := now.Sub(g.lastUpdate)
-		if elapsed > time.Millisecond*50 {
-			fmt.Printf("Time since last update: %v\n", elapsed)
-		}
-	}
+	// if !g.lastUpdate.IsZero() {
+	// 	elapsed := now.Sub(g.lastUpdate)
+	// 	if elapsed > time.Millisecond*50 {
+	// 		fmt.Printf("Time since last update: %v\n", elapsed)
+	// 	}
+	// }
 	g.lastUpdate = now
 
 	// increment the frame count
@@ -324,7 +323,6 @@ func removeDuplicatesOf[T comparable](s *[]T, value T) {
 func seedRNG(seed int64) {
 	if seed == 0 {
 		seed = time.Now().UnixNano() % 10000
-		seed = 11
 	}
 	log.Println("Random seed is ", seed)
 	rng = rand.New(rand.NewSource(seed))

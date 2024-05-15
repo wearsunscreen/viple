@@ -8,7 +8,6 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 
 ## MVP
 - clean end of game
-- change blink colors in gem visual mode
 - build in WebAsm
 
 ## To-Do List

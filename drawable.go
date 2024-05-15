@@ -7,5 +7,5 @@ import (
 // interface for things that are drawn to an image, screen
 type Drawable interface {
 	Draw(screen *ebiten.Image, frameCount int)
-	AddMover(startFrame int, duration int, from Point, to Point)
+	AddMover(startFrame int, duration int, from Coord, to Coord)
 }
