@@ -42,8 +42,11 @@ func (g Grid[T]) Copy() Grid[T] {
 	return clone
 }
 
-// return a copy of the grid with a row removed.
+// Delete Row returns a copy of the grid with a row removed.
 func (g Grid[T]) DeleteRow(y int) Grid[T] {
+	if y < 0 || y >= len(g) {
+		return g.Copy()
+	}
 	return append(g[:y], g[y+1:]...)
 }
 

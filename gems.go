@@ -109,7 +109,12 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	}
 	// draw gems
 	l.gemGrid.ForEach(func(p Coord, s Square) {
-		s.drawGem(screen, l.gemImages[s.gem], frameCount)
+		if s.gem >= 0 {
+			s.drawGem(screen, l.gemImages[s.gem], frameCount)
+		} else {
+			// shouldn't get here
+			s.drawBackground(screen, darkGreen)
+		}
 	})
 
 }
@@ -667,6 +672,18 @@ func updateTriples(l *LevelGemsVisualMode, frameCount int) {
 		if !l.gameIsWon() {
 			PlaySound(tripleOgg)
 			fillEmpties(l, frameCount, true)
+		} else {
+			// fill empties so Draw() continutes to work
+			fillEmpties(l, frameCount, false)
+			// remove all movers
+			l.gemGrid.ForEach(func(p Coord, s Square) {
+				if s.mover != nil {
+					sqPtr := l.gemGrid.GetPtr(p)
+					sqPtr.mover = nil
+					updateTriples(l, frameCount)
+				}
+			})
+
 		}
 	}
 }
