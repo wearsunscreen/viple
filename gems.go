@@ -128,8 +128,6 @@ func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 	case LevelIdGemsDD:
 		l.numGems = 4
 		numGemColumns = 8
-		numGemColumns = 3 // bugbug
-
 	}
 	l.cursorGem = Coord{numGemColumns / 2, numGemRows / 2}
 	l.swapGem = Coord{-1, -1}

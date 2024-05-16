@@ -7,7 +7,6 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - Cross-platform compatibility
 
 ## MVP
-- deleting row never fails
 - clean end of game
 - build in WebAsm
 - create video of playthrough
