@@ -128,6 +128,8 @@ func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 	case LevelIdGemsDD:
 		l.numGems = 4
 		numGemColumns = 8
+		numGemColumns = 3 // bugbug
+
 	}
 	l.cursorGem = Coord{numGemColumns / 2, numGemRows / 2}
 	l.swapGem = Coord{-1, -1}
@@ -257,7 +259,7 @@ func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 		if row >= newGrid.NumRows() {
 			break
 		}
-		newGrid.DeleteRow(row)
+		newGrid = newGrid.DeleteRow(row)
 	}
 
 	// check if the swap will create a triple
@@ -301,7 +303,6 @@ func deleteSelectionReplaceFromBelow(l *LevelGemsVisualMode, frameCount int) boo
 
 	// check if the swap will create a triple
 	makesATriple, _ := findTriples(newGrid)
-	// makesATriple = true // Bugbug: this is a hack to make the game easier
 
 	if makesATriple {
 		// set all selected squares to EMPTY_GEM

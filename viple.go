@@ -323,6 +323,7 @@ func removeDuplicatesOf[T comparable](s *[]T, value T) {
 func seedRNG(seed int64) {
 	if seed == 0 {
 		seed = time.Now().UnixNano() % 10000
+		seed = 1111 // bugbug
 	}
 	log.Println("Random seed is ", seed)
 	rng = rand.New(rand.NewSource(seed))
