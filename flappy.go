@@ -21,10 +21,8 @@ const (
 )
 
 var (
-	colorPipe           = darkAluminium
-	colorPastPipe       = mediumGreen
-	colorHitPipe        = mediumScarletRed
-	colorInivisiblePipe = mediumSkyBlue
+	colorPipe     = darkAluminium
+	colorPastPipe = mediumGreen
 )
 
 type LevelFlappy struct {

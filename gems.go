@@ -109,7 +109,12 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	}
 	// draw gems
 	l.gemGrid.ForEach(func(p Coord, s Square) {
-		s.drawGem(screen, l.gemImages[s.gem], frameCount)
+		if s.gem >= 0 {
+			s.drawGem(screen, l.gemImages[s.gem], frameCount)
+		} else {
+			// shouldn't get here
+			s.drawBackground(screen, darkGreen)
+		}
 	})
 
 }
@@ -189,7 +194,7 @@ func NewGridOfSquares(width, height int) Grid[Square] {
 			r[i][j] = Square{coords: Coord{j, i}}
 		}
 	}
-	return Grid[Square]{rows: r}
+	return r
 }
 
 func (square *Square) AddMover(startFrame int, duration int, from Coord, to Coord) {
@@ -252,7 +257,7 @@ func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 		if row >= newGrid.NumRows() {
 			break
 		}
-		newGrid.deleteRow(row)
+		newGrid = newGrid.DeleteRow(row)
 	}
 
 	// check if the swap will create a triple
@@ -296,7 +301,6 @@ func deleteSelectionReplaceFromBelow(l *LevelGemsVisualMode, frameCount int) boo
 
 	// check if the swap will create a triple
 	makesATriple, _ := findTriples(newGrid)
-	// makesATriple = true // Bugbug: this is a hack to make the game easier
 
 	if makesATriple {
 		// set all selected squares to EMPTY_GEM
@@ -667,6 +671,18 @@ func updateTriples(l *LevelGemsVisualMode, frameCount int) {
 		if !l.gameIsWon() {
 			PlaySound(tripleOgg)
 			fillEmpties(l, frameCount, true)
+		} else {
+			// fill empties so Draw() continutes to work
+			fillEmpties(l, frameCount, false)
+			// remove all movers
+			l.gemGrid.ForEach(func(p Coord, s Square) {
+				if s.mover != nil {
+					sqPtr := l.gemGrid.GetPtr(p)
+					sqPtr.mover = nil
+					updateTriples(l, frameCount)
+				}
+			})
+
 		}
 	}
 }

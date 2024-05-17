@@ -9,6 +9,7 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 ## MVP
 - clean end of game
 - build in WebAsm
+- create video of playthrough
 
 ## To-Do List
 - Animate the pufferfish character

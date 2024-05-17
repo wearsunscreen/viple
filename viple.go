@@ -277,7 +277,6 @@ func newGame() *Game {
 		return nil
 	}
 
-	// Bugbug: do we really want to defer this?
 	defer closeUI(res)
 	g.uiRes = res
 
