@@ -42,6 +42,7 @@ const (
 	LevelIdBricksHJKL
 	LevelIdGemsDD
 	LevelIdGemsVM
+	LevelIdGemsEnd
 )
 
 type LevelMode int
@@ -109,7 +110,7 @@ func (g *Game) Update() error {
 	// if !g.lastUpdate.IsZero() {
 	// 	elapsed := now.Sub(g.lastUpdate)
 	// 	if elapsed > time.Millisecond*50 {
-	// 		fmt.Printf("Time since last update: %v\n", elapsed)
+	// 		log.Printf("Time since last update: %v\n", elapsed)
 	// 	}
 	// }
 	g.lastUpdate = now
@@ -191,9 +192,11 @@ func advanceLevelMode(g *Game) {
 		case LevelIdFlappy:
 			g.curLevel = Level(&LevelFlappy{})
 		case LevelIdGemsVM:
-			g.curLevel = Level(&LevelGemsVisualMode{})
+			g.curLevel = Level(&LevelGems{})
+		case LevelIdGemsEnd:
+			g.curLevel = Level(&LevelGems{})
 		case LevelIdGemsDD:
-			g.curLevel = Level(&LevelGemsVisualMode{})
+			g.curLevel = Level(&LevelGems{})
 		}
 		g.curLevel.Initialize(g.currentLevel)
 	}

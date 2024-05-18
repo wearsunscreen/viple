@@ -32,12 +32,12 @@ var (
 	whiteCursor = color.RGBA{0xfc, 0xfc, 0xfc, 0x80}
 )
 
-type LevelGemsVisualMode struct {
+type LevelGems struct {
 	cursorGem   Coord
 	gemGrid     Grid[Square]
 	gemImages   []*ebiten.Image
 	level       LevelID
-	mode        int
+	viMode      int
 	numGems     int
 	swapGem     Coord
 	triplesMask Grid[bool]
@@ -59,7 +59,7 @@ var numGemColumns int
 /* ==================================
 */
 
-func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
+func (l *LevelGems) Draw(screen *ebiten.Image, frameCount int) {
 
 	screen.Fill(mediumCoal)
 
@@ -75,12 +75,14 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 	blink := frameCount / blinkInverval % 2
 
 	switch l.level {
+	case LevelIdGemsEnd:
+		fallthrough
 	case LevelIdGemsVM:
 		// we are in swap mode, faster blink, brighter colors
 		blink = frameCount / (blinkInverval / 2) % 2
 
 		// draw visualmode cursor
-		if l.mode == VisualMode {
+		if l.viMode == VisualMode {
 			cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
 			startX := cursorStart.x
 			for y := cursorStart.y; y <= cursorEnd.y; y++ {
@@ -119,9 +121,12 @@ func (l *LevelGemsVisualMode) Draw(screen *ebiten.Image, frameCount int) {
 
 }
 
-func (l *LevelGemsVisualMode) Initialize(id LevelID) {
+func (l *LevelGems) Initialize(id LevelID) {
 	l.level = id
 	switch id {
+	case LevelIdGemsEnd:
+		l.numGems = 6
+		numGemColumns = 10
 	case LevelIdGemsVM:
 		l.numGems = 5
 		numGemColumns = 5
@@ -134,13 +139,13 @@ func (l *LevelGemsVisualMode) Initialize(id LevelID) {
 	l.gemGrid = NewGridOfSquares(numGemColumns, numGemRows)
 	l.triplesMask = NewGridOfBools(numGemColumns, numGemRows)
 
-	l.mode = NormalMode
+	l.viMode = NormalMode
 	fillRandom(l)
 
 	l.loadGems()
 }
 
-func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
+func (l *LevelGems) Update(frameCount int) (bool, error) {
 	// clear movers if expired
 	l.gemGrid.ForEach(func(p Coord, s Square) {
 		if s.mover != nil {
@@ -154,9 +159,9 @@ func (l *LevelGemsVisualMode) Update(frameCount int) (bool, error) {
 
 	for _, key := range globalKeys {
 		if inpututil.IsKeyJustPressed(key) {
-			switch l.mode {
+			switch l.viMode {
 			case NormalMode:
-				handleKeyDeleteRows(l, key, frameCount)
+				handleKeyNormalMode(l, key, frameCount)
 			case VisualMode:
 				handleKeyVisualMode(l, key, frameCount)
 			}
@@ -248,7 +253,7 @@ func applyMover(mover *GemMover, op *ebiten.DrawImageOptions, frameCount int) {
 }
 
 // Delete all gems in a row. If it does nor result in a triple the delete will fail and restore to original state.
-func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
+func deleteRows(l *LevelGems, numRows, frameCount int) bool {
 	// copy the gem grid
 	newGrid := l.gemGrid.Copy()
 
@@ -291,7 +296,7 @@ func deleteRows(l *LevelGemsVisualMode, numRows, frameCount int) bool {
 
 // Delete all gems selected in visual mode.
 // If it does nor result in a triple the delete will fail and restore to original state.
-func deleteSelectionReplaceFromBelow(l *LevelGemsVisualMode, frameCount int) bool {
+func deleteSelectionReplaceFromBelow(l *LevelGems, frameCount int) bool {
 
 	// copy the gem grid to test if removing the selected squares will result in a triple
 	newGrid := l.gemGrid.Copy()
@@ -323,7 +328,7 @@ func deleteSelectionReplaceFromBelow(l *LevelGemsVisualMode, frameCount int) boo
 // Delete all gems selected in visual mode.
 // If it does nor result in a triple the delete will fail and restore to original state.
 // This moves gems left to fill the empty space and wraps gems from the next row.
-func deleteSelectionReplaceFromRight(l *LevelGemsVisualMode, frameCount int) bool {
+func deleteSelectionReplaceFromRight(l *LevelGems, frameCount int) bool {
 	// copy the gem grid to test if removing the selected squares will result in a triple
 	newGrid := l.gemGrid.Copy()
 
@@ -396,7 +401,7 @@ func deleteSelectionReplaceFromRight(l *LevelGemsVisualMode, frameCount int) boo
 	return true
 }
 
-func fillEmpties(l *LevelGemsVisualMode, frameCount int, addMover bool) {
+func fillEmpties(l *LevelGems, frameCount int, addMover bool) {
 	moveUpFromBelow(&l.gemGrid, frameCount, addMover)
 	fillFromBelow(&l.gemGrid, l.numGems, frameCount, addMover)
 }
@@ -420,7 +425,7 @@ func fillFromBelow(gemGrid *Grid[Square], numGems, frameCount int, addMover bool
 }
 
 // fills the entire gemGrid with random gems
-func fillRandom(l *LevelGemsVisualMode) {
+func fillRandom(l *LevelGems) {
 	for y := range l.gemGrid.NumRows() {
 		for x := range l.gemGrid.NumColumns() {
 			setGem(&l.gemGrid, Coord{x, y}, rng.Intn(l.numGems))
@@ -474,7 +479,7 @@ func findTriples(gemGrid Grid[Square]) (bool, Grid[bool]) {
 	return found, mask
 }
 
-func (l *LevelGemsVisualMode) gameIsWon() bool {
+func (l *LevelGems) gameIsWon() bool {
 	for y := range l.gemGrid.NumRows() {
 		for x := range l.gemGrid.NumColumns() {
 			if !l.triplesMask.Get(Coord{x, y}) {
@@ -485,21 +490,25 @@ func (l *LevelGemsVisualMode) gameIsWon() bool {
 	return true
 }
 
-func handleKeyDeleteRows(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
+func handleKeyNormalMode(l *LevelGems, key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyD:
 		if equals(tail(globalKeys, 2), []ebiten.Key{ebiten.KeyD, ebiten.KeyD}) {
-			deleteRows(l, 1, frameCount)
+			if l.level != LevelIdGemsVM {
+				deleteRows(l, 1, frameCount)
+			}
 			clearKeystrokes()
 		}
 	case ebiten.KeyEnter:
-		t := tail(globalKeys, 3)
-		if len(t) > 1 {
-			if t[0] == ebiten.KeyD {
-				n := t[1] - ebiten.Key0
-				if n > 0 && n < 10 {
-					deleteRows(l, int(n), frameCount)
-					clearKeystrokes()
+		if l.level != LevelIdGemsVM {
+			t := tail(globalKeys, 3)
+			if len(t) > 1 {
+				if t[0] == ebiten.KeyD {
+					n := t[1] - ebiten.Key0
+					if n > 0 && n < 10 {
+						deleteRows(l, int(n), frameCount)
+						clearKeystrokes()
+					}
 				}
 			}
 		}
@@ -517,13 +526,15 @@ func handleKeyDeleteRows(l *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 		clearKeystrokes()
 	case ebiten.KeyV:
 		// entering VisualMode (where we do swaps)
-		l.swapGem = l.cursorGem
-		l.mode = VisualMode
+		if l.level != LevelIdGemsDD {
+			l.swapGem = l.cursorGem
+			l.viMode = VisualMode
+		}
 		clearKeystrokes()
 	}
 }
 
-func handleKeyVisualMode(l *LevelGemsVisualMode, key ebiten.Key, frameCount int) {
+func handleKeyVisualMode(l *LevelGems, key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyH:
 		l.swapGem.x = max(l.swapGem.x-1, 0)
@@ -542,7 +553,7 @@ func handleKeyVisualMode(l *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 		clearKeystrokes()
 	case ebiten.KeyEscape:
 		// exit visual mode without swapping
-		l.mode = NormalMode
+		l.viMode = NormalMode
 		l.cursorGem = l.swapGem
 		l.swapGem = Coord{-1, -1}
 		clearKeystrokes()
@@ -551,7 +562,7 @@ func handleKeyVisualMode(l *LevelGemsVisualMode, key ebiten.Key, frameCount int)
 		if result := deleteSelectionReplaceFromBelow(l, frameCount); result {
 			// swap successful
 			// exiting visual mode
-			l.mode = NormalMode
+			l.viMode = NormalMode
 			l.cursorGem = l.swapGem
 			l.swapGem = Coord{-1, -1}
 		} else {
@@ -584,7 +595,7 @@ func highLow(p1, p2 Coord) (Coord, Coord) {
 		}
 	}
 }
-func (l *LevelGemsVisualMode) loadGems() {
+func (l *LevelGems) loadGems() {
 	if len(l.gemImages) == 0 {
 		l.gemImages = make([]*ebiten.Image, l.numGems)
 		for i := range l.numGems {
@@ -654,7 +665,7 @@ func squareToScreenPoint(squareXY Coord) Coord {
 	}
 }
 
-func updateTriples(l *LevelGemsVisualMode, frameCount int) {
+func updateTriples(l *LevelGems, frameCount int) {
 	found, mask := findTriples(l.gemGrid)
 
 	if found {
