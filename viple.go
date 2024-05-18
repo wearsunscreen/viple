@@ -171,7 +171,9 @@ func gameDimensions() (width int, height int) {
 func advanceLevelMode(g *Game) {
 	if g.mode == OutroMode {
 		// advance to next Level if current level has been won
-		g.currentLevel += 1
+		if g.currentLevel != LevelIdGemsEnd {
+			g.currentLevel += 1
+		}
 		clearKeystrokes()
 		globalKeys = globalKeys[:0] // clear the keys
 	}
