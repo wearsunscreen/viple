@@ -7,9 +7,6 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - Cross-platform compatibility
 
 ## MVP
-- "dd" causes deletion in VM game level
-- "v" caused problems in DL game level
-- clean end of game
 - build in WebAsm
 - create video of playthrough
 
@@ -36,5 +33,4 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 ## Known Defects
 
 ## Contributing
-
-Contributions to Viple are welcome! Want to add a new level? Found a but? Have ideas for improvements? Please feel free to open an issue or submit a pull request on the project's GitLab repository.
+Contributions to Viple are welcome! Want to add a new level? Found a bug? Have ideas for improvements? Open an issue or submit a pull request on the project's GitLab repository.

@@ -47,8 +47,8 @@ Escape to exit visual mode.
 
 Make sure deleting connects three identical jewels!`,
 	// LevelIdGemsEnd
-	`You'll need all the skills you've learned to
-to complete this level!`,
+	`Congratulations you have completed all the learning levels.
+Use all the skills you've learned toto complete this level!`,
 }
 
 var IntroTitle = [...]string{
