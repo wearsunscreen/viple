@@ -32,7 +32,7 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - Make Grid a package
 
 ## Known Defects
-- "dd" causes fail.ogg sound in VM game level
+- "dd" causes deletion in VM game level
 
 ## Contributing
 

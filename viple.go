@@ -216,10 +216,7 @@ func equals[T comparable](a, b []T) bool {
 }
 
 func isCheatKeyPressed() bool {
-	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
-		return true
-	}
-	return false
+	return inpututil.IsKeyJustPressed(ebiten.KeyC)
 }
 
 func limitToRange[T Number](input, low, high T) (output T) {

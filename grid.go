@@ -6,22 +6,10 @@ package main
 // Elements can be retrieved and set using x,y coordinates or by index into a one-dimensional array.
 type Grid[T comparable] [][]T
 
-// type Grid[T comparable] struct {
-// 	rows [][]T
-// }
-
 // Coord represents a coordinate in a grid.
 type Coord struct {
 	x, y int
 }
-
-// To do:
-// Add generic function to create a new grid of any type
-// by passing a
-
-// To do:
-// redefine as a 2D slice
-// type Grid[T comparable] [][]T
 
 // NewGridOfBools creates a new Grid of booleans with the specified width and height.
 func NewGridOfBools(width, height int) Grid[bool] {

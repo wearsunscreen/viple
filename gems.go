@@ -186,6 +186,7 @@ type Square struct {
 	coords Coord // position in the grid
 }
 
+// NewGridOfSquares creates a grid of squares
 func NewGridOfSquares(width, height int) Grid[Square] {
 	r := make([][]Square, height)
 	for i := range r {
