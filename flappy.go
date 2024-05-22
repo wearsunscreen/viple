@@ -41,6 +41,15 @@ type Pipe struct {
 	x             float32
 }
 
+func isCircleTouchingRect(circleX, circleY, circleRadius, rectLeft, rectTop, rectWidth, rectHeight float32) bool {
+	// Check if the circle's center is inside the rectangle
+	if circleX+circleRadius >= rectLeft && circleX-circleRadius <= rectLeft+rectWidth &&
+		circleY+circleRadius >= rectTop && circleY-circleRadius <= rectTop+rectHeight {
+		return true
+	}
+	return false
+}
+
 func (l *LevelFlappy) addPipe(frameCount int) {
 	if l.numPipesPast <= lastPipe {
 		p := new(Pipe)
@@ -57,7 +66,7 @@ func (l *LevelFlappy) gameIsWon() bool {
 	return l.numPipesPast > lastPipe
 }
 
-func (l *LevelFlappy) CheckPipeCollisions() {
+func (l *LevelFlappy) checkPipeCollisions() {
 	for _, p := range l.pipes {
 		if isCircleTouchingRect(fishX, l.fishY, fishRadius, p.x, 0, pipeWidth, p.gapY) ||
 			isCircleTouchingRect(fishX, l.fishY, fishRadius, p.x, p.gapY+gapHeight, pipeWidth, screenHeight-p.gapY+gapHeight) {
@@ -92,15 +101,6 @@ func (l *LevelFlappy) Initialize(id LevelID) {
 	if l.fishImage == nil {
 		l.fishImage = loadImage("resources/pufferfish80.png")
 	}
-}
-
-func isCircleTouchingRect(circleX, circleY, circleRadius, rectLeft, rectTop, rectWidth, rectHeight float32) bool {
-	// Check if the circle's center is inside the rectangle
-	if circleX+circleRadius >= rectLeft && circleX-circleRadius <= rectLeft+rectWidth &&
-		circleY+circleRadius >= rectTop && circleY-circleRadius <= rectTop+rectHeight {
-		return true
-	}
-	return false
 }
 
 func (l *LevelFlappy) updateFish() {
@@ -153,7 +153,7 @@ func (l *LevelFlappy) Update(frameCount int) (bool, error) {
 
 	l.updateFish()
 	l.updatePipes(frameCount)
-	l.CheckPipeCollisions()
+	l.checkPipeCollisions()
 
 	return false, nil
 }
