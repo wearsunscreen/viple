@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -93,7 +94,7 @@ func (l *LevelBricksHL) CheckBrickCollisions() {
 					case minD == bottomD:
 						l.ballDY *= -1
 					default:
-						panic("Bad collision calculation")
+						log.Fatal("Bad collision calculation")
 					}
 
 					PlaySound(brickOgg)

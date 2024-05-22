@@ -30,6 +30,7 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - change functions that take level pointers and change to level methods
 - Isolate ebiten code from game logic
 - Make Grid a package
+- Add logging, perhaps with glog
 
 ## Known Defects
 - mixing d and v can get the end level confused. 

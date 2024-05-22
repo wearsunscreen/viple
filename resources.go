@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"log"
 	"strconv"
 
 	"github.com/ebitenui/ebitenui/image"
@@ -771,7 +772,7 @@ func (u *uiResources) close() {
 func hexToColor(h string) color.Color {
 	u, err := strconv.ParseUint(h, 16, 0)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	return color.NRGBA{

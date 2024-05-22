@@ -154,7 +154,7 @@ func checkForKeystroke(key ebiten.Key, f func()) {
 // function to fill slice of any type
 func fillSlice[T any](s []T, value T) []T {
 	if s == nil {
-		panic("slice cannot be nil")
+		log.Fatal("slice cannot be nil")
 	}
 
 	for i := range s {
