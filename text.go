@@ -43,9 +43,12 @@ match up three jewels you'll lose gold!`,
 
 Press V to enter visual and the navigation keys (H,J,K,L)
 to select jewels. Press D to delete the selection.
-Escape to exit visual mode.kjjl
+Escape to exit visual mode.
 
 Make sure deleting connects three identical jewels!`,
+	// LevelIdGemsEnd
+	`Congratulations you have completed all the learning levels.
+Use all the skills you've learned toto complete this level!`,
 }
 
 var IntroTitle = [...]string{
@@ -59,6 +62,8 @@ var IntroTitle = [...]string{
 	`Connect Three!`,
 	// LevelIdGemsVM
 	`Visual Mode`,
+	// LevelIdGemsEnd
+	`Challenge Level!`,
 }
 
 func GetIntroText(id int) string {
