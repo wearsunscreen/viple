@@ -42,6 +42,7 @@ const (
 	LevelIdBricksHJKL
 	LevelIdGemsDD
 	LevelIdGemsVM
+	LevelIdGemsEnd
 )
 
 type LevelMode int
@@ -109,7 +110,7 @@ func (g *Game) Update() error {
 	// if !g.lastUpdate.IsZero() {
 	// 	elapsed := now.Sub(g.lastUpdate)
 	// 	if elapsed > time.Millisecond*50 {
-	// 		fmt.Printf("Time since last update: %v\n", elapsed)
+	// 		log.Printf("Time since last update: %v\n", elapsed)
 	// 	}
 	// }
 	g.lastUpdate = now
@@ -153,7 +154,7 @@ func checkForKeystroke(key ebiten.Key, f func()) {
 // function to fill slice of any type
 func fillSlice[T any](s []T, value T) []T {
 	if s == nil {
-		panic("slice cannot be nil")
+		log.Fatal("slice cannot be nil")
 	}
 
 	for i := range s {
@@ -170,7 +171,9 @@ func gameDimensions() (width int, height int) {
 func advanceLevelMode(g *Game) {
 	if g.mode == OutroMode {
 		// advance to next Level if current level has been won
-		g.currentLevel += 1
+		if g.currentLevel != LevelIdGemsEnd {
+			g.currentLevel += 1
+		}
 		clearKeystrokes()
 		globalKeys = globalKeys[:0] // clear the keys
 	}
@@ -191,9 +194,11 @@ func advanceLevelMode(g *Game) {
 		case LevelIdFlappy:
 			g.curLevel = Level(&LevelFlappy{})
 		case LevelIdGemsVM:
-			g.curLevel = Level(&LevelGemsVisualMode{})
+			g.curLevel = Level(&LevelGems{})
+		case LevelIdGemsEnd:
+			g.curLevel = Level(&LevelGems{})
 		case LevelIdGemsDD:
-			g.curLevel = Level(&LevelGemsVisualMode{})
+			g.curLevel = Level(&LevelGems{})
 		}
 		g.curLevel.Initialize(g.currentLevel)
 	}

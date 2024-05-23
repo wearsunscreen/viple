@@ -7,16 +7,16 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - Cross-platform compatibility
 
 ## MVP
-- clean end of game
 - build in WebAsm
 - create video of playthrough
 
 ## To-Do List
 - Animate the pufferfish character
 - Implement a Snake game to practice the H, J, K, and L navigation keys
+- Implement a minefield game to practice w and page up/down
 - Improve the overall visual design and aesthetics
-- Develop a maki game to teach word advance 
-- Create a main menu for selecting levels 
+- Develop a maki game to teach word advance
+- Create a main menu for selecting levels
 - Script the pipe gaps in the pufferfish level
 - Add support for quitting the game using commands `:q`, `:quit`, `:exit`, etc.
 - set of valid and invalid key strokes per level
@@ -28,12 +28,13 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 - Test the game on different platforms for compatibility
 
 ## Refactoring
+- change functions that take level pointers and change to level methods
 - Isolate ebiten code from game logic
 - Make Grid a package
+- Add logging, perhaps with glog
 
 ## Known Defects
-- "dd" causes deletion in VM game level
+- mixing d and v can get the end level confused.
 
 ## Contributing
-
-Contributions to Viple are welcome! Want to add a new level? Found a but? Have ideas for improvements? Please feel free to open an issue or submit a pull request on the project's GitLab repository.
+Contributions to Viple are welcome! Want to add a new level? Found a bug? Have ideas for improvements? Open an issue or submit a pull request on the project's GitLab repository.
