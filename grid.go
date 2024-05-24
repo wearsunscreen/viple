@@ -1,6 +1,10 @@
 // Package grid provides a generic type that represents a two-dimensional slice.
 package main
 
+import (
+	"log"
+)
+
 // Grid is a generic type that represents a two-dimensional slice.
 // It is parameterized by the type of elements it contains, denoted by T.
 // Elements can be retrieved and set using x,y coordinates or by index into a one-dimensional array.
@@ -80,7 +84,7 @@ func (g Grid[T]) GetPtr(p Coord) *T {
 // It panics if the Point is out of bounds.
 func (g Grid[T]) Get(p Coord) T {
 	if p.y < 0 || p.y >= g.NumRows() || p.x < 0 || p.x >= g.NumColumns() {
-		panic("Index out of bounds")
+		log.Fatal("Index out of bounds")
 	}
 	return g[p.y][p.x]
 }
