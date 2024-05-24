@@ -8,6 +8,7 @@ Viple is a game designed to help you learn and practice the vi text editor comma
 
 ## MVP
 - build in WebAsm
+-- env GOOS=js GOARCH=wasm go build -o viple.wasm gitlab.com/johncrane/viple
 - create video of playthrough
 
 ## To-Do List
