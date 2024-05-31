@@ -39,6 +39,7 @@ type LevelID int
 const (
 	LevelIdFlappy = iota
 	LevelIdBricksHL
+	LevelIdSnake
 	LevelIdBricksHJKL
 	LevelIdGemsDD
 	LevelIdGemsVM
@@ -199,6 +200,10 @@ func advanceLevelMode(g *Game) {
 			g.curLevel = Level(&LevelGems{})
 		case LevelIdGemsDD:
 			g.curLevel = Level(&LevelGems{})
+		case LevelIdSnake:
+			g.curLevel = Level(&LevelSnake{})
+		default:
+			log.Fatal("Invalid level")
 		}
 		g.curLevel.Initialize(g.currentLevel)
 	}
