@@ -40,10 +40,11 @@ const (
 	LevelIdFlappy = iota
 	LevelIdBricksHL
 	LevelIdSnake
-	LevelIdBricksHJKL
 	LevelIdGemsDD
 	LevelIdGemsVM
 	LevelIdGemsEnd
+	// deprecated levels below
+	LevelIdBricksHJKL
 )
 
 type LevelMode int
@@ -190,8 +191,8 @@ func advanceLevelMode(g *Game) {
 		switch g.currentLevel {
 		case LevelIdBricksHL:
 			g.curLevel = Level(&LevelBricksHL{})
-		case LevelIdBricksHJKL:
-			g.curLevel = Level(&LevelBricksHL{})
+		// case LevelIdBricksHJKL:
+		// 	g.curLevel = Level(&LevelBricksHL{})
 		case LevelIdFlappy:
 			g.curLevel = Level(&LevelFlappy{})
 		case LevelIdGemsVM:
