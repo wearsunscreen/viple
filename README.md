@@ -1,5 +1,7 @@
 # Viple: A Game to Learn Vi
-Viple is a game designed to help you learn and practice the vi text editor commands. Viple is written in Go, using the [Ebiten game engine](https://ebitengine.org/) and the [Ebiten UI widget library](https://ebitenui.github.io/). This project is still under development. Contributions are welcome.
+Viple is a game designed to help you learn and practice the vi text editor commands. Viple is written in Go, using the [Ebiten game engine](https://ebitengine.org/) and the [Ebiten UI widget library](https://ebitenui.github.io/). 
+
+This project is still under development. Contributions are welcome.
 
 ## Features
 - Interactive levels to teach various vi commands
