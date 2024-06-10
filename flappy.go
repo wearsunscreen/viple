@@ -2,7 +2,6 @@ package main
 
 import (
 	"image/color"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -60,7 +59,6 @@ func (l *LevelFlappy) addPipe(frameCount int) {
 		l.pipes = append(l.pipes, p)
 		p.color = colorPipe
 		p.completed = false
-		log.Println("Added pipe starting frame ", p)
 	}
 }
 

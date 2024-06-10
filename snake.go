@@ -157,10 +157,12 @@ func (l *LevelSnake) gameIsWon() bool {
 }
 
 func (l *LevelSnake) generateFood() Coord {
+	// don't put food on the edges
 	food := Coord{
-		x: rand.Intn(gridWidth-8) + 4,
-		y: rand.Intn(gridHeight-8) + 4,
+		x: rand.Intn(gridWidth-4) + 2,
+		y: rand.Intn(gridHeight-4) + 2,
 	}
+	// don't put food on the snake
 	for i := 0; i < len(l.snake.body); i++ {
 		if l.snake.body[i] == food {
 			return l.generateFood()
