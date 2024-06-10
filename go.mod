@@ -1,4 +1,4 @@
-module gitlab.com/wearsunscreen/viple
+module github.com/wearsunscreen/viple
 
 go 1.22.1
 

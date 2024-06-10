@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -59,6 +60,7 @@ func (l *LevelFlappy) addPipe(frameCount int) {
 		l.pipes = append(l.pipes, p)
 		p.color = colorPipe
 		p.completed = false
+		log.Println("Added pipe starting frame ", p)
 	}
 }
 
@@ -70,8 +72,11 @@ func (l *LevelFlappy) checkPipeCollisions() {
 	for _, p := range l.pipes {
 		if isCircleTouchingRect(fishX, l.fishY, fishRadius, p.x, 0, pipeWidth, p.gapY) ||
 			isCircleTouchingRect(fishX, l.fishY, fishRadius, p.x, p.gapY+gapHeight, pipeWidth, screenHeight-p.gapY+gapHeight) {
-			p.color = darkScarletRed
-			l.numPipesPast = 0
+			if p.color != darkScarletRed {
+				p.color = darkScarletRed
+				l.numPipesPast = 0
+				PlaySound(failOgg)
+			}
 		}
 	}
 }
@@ -119,7 +124,10 @@ func (l *LevelFlappy) updateFish() {
 }
 
 func (l *LevelFlappy) updatePipes(frameCount int) {
-	if (frameCount+pipeInterval)%pipeInterval == 0 {
+	if l.startingFrame == 0 {
+		l.startingFrame = frameCount
+		l.addPipe(frameCount)
+	} else if (frameCount-l.startingFrame+pipeInterval)%pipeInterval == 0 {
 		l.addPipe(frameCount)
 	}
 

@@ -6,6 +6,7 @@ import (
 	_ "image/png"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"golang.org/x/exp/constraints"
@@ -122,6 +123,7 @@ func (g *Game) Update() error {
 
 	// save the keys that were pressed in this frame
 	globalKeys = inpututil.AppendJustPressedKeys(globalKeys)
+	isQuitKeyPressed()
 
 	switch g.mode {
 	case IntroMode:
@@ -224,6 +226,12 @@ func equals[T comparable](a, b []T) bool {
 		}
 	}
 	return true
+}
+
+func isQuitKeyPressed() {
+	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
+		os.Exit(0)
+	}
 }
 
 func isCheatKeyPressed() bool {
@@ -374,12 +382,12 @@ func showIntroDialog(g *Game) {
 	g.ui.Container.AddChild(innerContainer)
 
 	titleText := widget.NewText(
-		widget.TextOpts.Text(GetTitleText(int(g.currentLevel)), titleFace, dlgText),
+		widget.TextOpts.Text(TitleText(g.currentLevel), titleFace, dlgText),
 	)
 	innerContainer.AddChild(titleText)
 
 	level1IntroText := widget.NewText(
-		widget.TextOpts.Text(GetIntroText(int(g.currentLevel)), textFace, dlgText),
+		widget.TextOpts.Text(IntroText(g.currentLevel), textFace, dlgText),
 	)
 	innerContainer.AddChild(level1IntroText)
 

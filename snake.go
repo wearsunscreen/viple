@@ -130,11 +130,12 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 			// Check if the snake has collided with the boundaries or itself
 			if head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight {
 				l.Initialize(l.level)
-				return l.gameIsWon(), nil
+				return false, nil
 			}
 			for i := 1; i < len(l.snake.body); i++ {
 				if head == l.snake.body[i] {
-					return l.gameIsWon(), nil
+					l.Initialize(l.level)
+					return false, nil
 				}
 			}
 		}
@@ -144,15 +145,13 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 	}
 
 	// continue level until snake dies
-	return false, nil
+	return l.gameIsWon(), nil
 }
 
 func (l *LevelSnake) gameIsWon() bool {
 	win := len(l.snake.body) >= lengthForWin
 	if win {
 		PlaySound(winOgg)
-	} else {
-		PlaySound(failOgg)
 	}
 	return win
 }

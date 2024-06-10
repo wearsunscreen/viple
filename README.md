@@ -9,11 +9,15 @@ This project is still under development. Contributions are welcome.
 - Cross-platform compatibility
 
 ## MVP
+- change gem, selection, cursor drawing to make all more distinguishable
+- sound on pufferfish collision
+- first pipes should appear sooner in flappy
 - build in WebAsm
--- env GOOS=js GOARCH=wasm go build -o viple.wasm gitlab.com/johncrane/viple
+-- env GOOS=js GOARCH=wasm go build -o viple.wasm github.com/wearsunscreen/viple
 - create video of playthrough
 
 ## To-Do List
+- center dialogs?
 - Animate the pufferfish character
 - Implement a Snake game to practice the H, J, K, and L navigation keys
 - Implement a minefield game to practice w and page up/down

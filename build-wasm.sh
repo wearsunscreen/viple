@@ -1,0 +1,1 @@
+env GOOS=js GOARCH=wasm go build -o viple.wasm github.com/wearsunscreen/viple

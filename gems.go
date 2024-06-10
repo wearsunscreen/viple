@@ -578,6 +578,9 @@ func (l *LevelGems) loadGems() {
 }
 
 func (l *LevelGems) Update(frameCount int) (bool, error) {
+	if isCheatKeyPressed() {
+		return true, nil
+	}
 	// clear movers if expired
 	l.gemGrid.ForEach(func(p Coord, s Square) {
 		if s.mover != nil {
@@ -597,10 +600,6 @@ func (l *LevelGems) Update(frameCount int) (bool, error) {
 			case VisualMode:
 				l.handleKeyVisualMode(key, frameCount)
 			}
-		}
-		// cheat code to fill
-		if isCheatKeyPressed() {
-			return true, nil
 		}
 	}
 
