@@ -181,8 +181,7 @@ func squareToScreenPoint(squareXY Coord) Coord {
 }
 
 func (l *LevelGems) Draw(screen *ebiten.Image, frameCount int) {
-
-	screen.Fill(mediumCoal)
+	screen.Fill(darkCoal)
 
 	// draw background of triples
 	l.gemGrid.ForEach(func(p Coord, s Square) {
@@ -190,6 +189,9 @@ func (l *LevelGems) Draw(screen *ebiten.Image, frameCount int) {
 			s.drawBackground(screen, lightGold)
 		}
 	})
+
+	l.drawSelection(screen, frameCount)
+	l.drawCursor(screen, frameCount)
 
 	// draw cursor
 	cursorColors := [2]color.Color{redCursor, whiteCursor}
@@ -199,30 +201,8 @@ func (l *LevelGems) Draw(screen *ebiten.Image, frameCount int) {
 	case LevelIdGemsEnd:
 		fallthrough
 	case LevelIdGemsVM:
-		// we are in swap mode, faster blink, brighter colors
-		blink = frameCount / (blinkInverval / 2) % 2
-
-		// draw visualmode cursor
-		if l.viMode == VisualMode {
-			cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
-			startX := cursorStart.x
-			for y := cursorStart.y; y <= cursorEnd.y; y++ {
-				for x := startX; x < numGemColumns; x++ {
-					s := l.gemGrid.Get(Coord{x, y})
-					s.drawBackground(screen, darkGreen)
-					if x == cursorEnd.x && y == cursorEnd.y {
-						break
-					}
-					// start next line at left edge
-					startX = 0
-				}
-			}
-			s := l.gemGrid.Get(l.swapGem)
-			s.drawBackground(screen, cursorColors[blink])
-		} else {
-			s := l.gemGrid.Get(l.cursorGem)
-			s.drawBackground(screen, cursorColors[blink])
-		}
+		s := l.gemGrid.Get(l.cursorGem)
+		s.drawBackground(screen, cursorColors[blink])
 	case LevelIdGemsDD:
 		l.gemGrid.ForEach(func(p Coord, s Square) {
 			if p.y == l.cursorGem.y {
@@ -239,7 +219,44 @@ func (l *LevelGems) Draw(screen *ebiten.Image, frameCount int) {
 			s.drawBackground(screen, darkGreen)
 		}
 	})
+}
 
+func (l *LevelGems) drawCursor(screen *ebiten.Image, frameCount int) {
+	// draw cursor
+	cursorColors := [2]color.Color{redCursor, whiteCursor}
+	blink := frameCount / blinkInverval % 2
+
+	switch l.level {
+	case LevelIdGemsEnd:
+		fallthrough
+	case LevelIdGemsVM:
+		s := l.gemGrid.Get(l.cursorGem)
+		s.drawBackground(screen, cursorColors[blink])
+	case LevelIdGemsDD:
+		// highlight the entire row
+		l.gemGrid.ForEach(func(p Coord, s Square) {
+			if p.y == l.cursorGem.y {
+				s.drawBackground(screen, cursorColors[blink])
+			}
+		})
+	}
+}
+func (l *LevelGems) drawSelection(screen *ebiten.Image, frameCount int) {
+	if l.viMode == VisualMode {
+		cursorStart, cursorEnd := highLow(l.cursorGem, l.swapGem)
+		startX := cursorStart.x
+		for y := cursorStart.y; y <= cursorEnd.y; y++ {
+			for x := startX; x < numGemColumns; x++ {
+				s := l.gemGrid.Get(Coord{x, y})
+				s.drawBackground(screen, darkGreen)
+				if x == cursorEnd.x && y == cursorEnd.y {
+					break
+				}
+				// start next line at left edge
+				startX = 0
+			}
+		}
+	}
 }
 
 // Delete all gems in a row. If it does nor result in a triple the delete will fail and restore to original state.
@@ -509,16 +526,16 @@ func (l *LevelGems) handleKeyNormalMode(key ebiten.Key, frameCount int) {
 func (l *LevelGems) handleKeyVisualMode(key ebiten.Key, frameCount int) {
 	switch key {
 	case ebiten.KeyH:
-		l.swapGem.x = max(l.swapGem.x-1, 0)
+		l.cursorGem.x = max(l.cursorGem.x-1, 0)
 		clearKeystrokes()
 	case ebiten.KeyL:
-		l.swapGem.x = min(l.swapGem.x+1, numGemColumns-1)
+		l.cursorGem.x = min(l.cursorGem.x+1, numGemColumns-1)
 		clearKeystrokes()
 	case ebiten.KeyK:
-		l.swapGem.y = max(l.swapGem.y-1, 0)
+		l.cursorGem.y = max(l.cursorGem.y-1, 0)
 		clearKeystrokes()
 	case ebiten.KeyJ:
-		l.swapGem.y = min(l.swapGem.y+1, numGemRows-1)
+		l.cursorGem.y = min(l.cursorGem.y+1, numGemRows-1)
 		clearKeystrokes()
 	case ebiten.KeyV:
 		PlaySound(failOgg)
