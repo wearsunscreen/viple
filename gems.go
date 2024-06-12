@@ -28,8 +28,8 @@ const (
 
 var (
 	lightGold   = color.RGBA{0xff, 0xff, 0x80, 0xff}
-	redCursor   = color.RGBA{0xfc, 0x10, 0x10, 0x80}
-	whiteCursor = color.RGBA{0xfc, 0xfc, 0xfc, 0x80}
+	redCursor   = color.RGBA{0xfc, 0x10, 0x10, 0x40}
+	whiteCursor = color.RGBA{0xac, 0xac, 0xac, 0x40}
 )
 
 var numGemColumns int
@@ -543,7 +543,6 @@ func (l *LevelGems) handleKeyVisualMode(key ebiten.Key, frameCount int) {
 	case ebiten.KeyEscape:
 		// exit visual mode without swapping
 		l.viMode = NormalMode
-		l.cursorGem = l.swapGem
 		l.swapGem = Coord{-1, -1}
 		clearKeystrokes()
 	case ebiten.KeyD:
