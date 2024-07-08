@@ -7,20 +7,18 @@ import (
 func IntroText(level LevelID) string {
 	switch level {
 	case LevelIdFlappy:
-		return `Learn vi by playing classic games. 
-
-In vi you use the J key to move down and the K key to move up
-Use these keys to guide the pufferfish through the gaps. 
-
+		return `Learn vi by playing classic games. Your first challenge 
+is to navigate the pufferfish through the obstacles. 
 Pass seven obstacles without fail to advance to the next level.
 
-Q to quit`
+J -- Up
+K -- Down
+Q -- Quit`
 	case LevelIdBricksHL:
-		return `Move the paddle left and right by 
-pressing H and K keys.
+		return `Clear the bricks to advance to the next level
 
-Clear the bricks to advance to the next level
-
+H to move left
+K to move right
 Q to quit`
 	case LevelIdSnake:
 		return `Guide the snake using the H, J, K, L keys.
@@ -37,12 +35,12 @@ Clear all bricks to advance to the next level.
 Q to quit`
 	case LevelIdGemsDD:
 		return `Delete lines to connect 3 matching jewels. 
-Pressing d twice will delete the current line in vi.
-Pressing d a number and return will multiple lines.
+D, D -- Delete line
+D, [2, 3, 4, ...], Enter -- Delete multiple lines
 
-Delete lines to match 3 identical jewels and turn
-the squares gold. Turn all squares gold to advance 
-to the next level. 
+Delete lines to line up 3 identical jewels in a vertical column. 
+Matching gems will turn the squares gold. 
+Turn all squares gold to advance to the next level. 
 
 Be careful. If you you try to delete a line that doesn't 
 match up three jewels you'll lose gold!`
