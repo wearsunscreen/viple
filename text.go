@@ -34,7 +34,7 @@ Clear all bricks to advance to the next level.
 
 Q to quit`
 	case LevelIdGemsDD:
-		return `Delete lines to connect 3 matching jewels. 
+		return `Delete lines to connect 3 matching jewels.
 D, D -- Delete line
 D, [2, 3, 4, ...], Enter -- Delete multiple lines
 

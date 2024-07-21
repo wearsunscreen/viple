@@ -17,6 +17,8 @@ This project is still under development. Contributions are welcome.
 - create video of playthrough
 
 ## To-Do List
+- Add insert mode level, snake level where only in insert mode can you eat, change color of snake by mode
+- Embed viple into a web page with instructions. 
 - center dialogs?
 - Animate the pufferfish character
 - Implement a Snake game to practice the H, J, K, and L navigation keys
