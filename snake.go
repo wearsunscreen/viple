@@ -72,7 +72,7 @@ func (l *LevelSnake) Initialize(id LevelID) {
 		direction: east,
 	}
 	l.level = id
-	l.food = l.generateFood()
+	l.food = l.generateFood(Coord{x: 0, y: 0})
 	l.score = 0
 }
 
@@ -140,7 +140,7 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 		// Check if the snake has collided with the food
 		canEat := l.level == LevelIdSnake || (l.level == LevelIdInsertMode && l.viMode == InsertMode)
 		if head == l.food && canEat {
-			l.food = l.generateFood()
+			l.food = l.generateFood(head)
 			l.score++
 			if l.score == lengthForWin {
 				PlaySound(winOgg)
@@ -179,16 +179,20 @@ func (l *LevelSnake) gameIsWon() bool {
 	return win
 }
 
-func (l *LevelSnake) generateFood() Coord {
+func (l *LevelSnake) generateFood(head Coord) Coord {
 	// don't put food on the edges
 	food := Coord{
 		x: rand.Intn(gridWidth-4) + 2,
 		y: rand.Intn(gridHeight-4) + 2,
 	}
 	// don't put food on the snake
-	for i := 0; i < len(l.snake.body); i++ {
-		if l.snake.body[i] == food {
-			return l.generateFood()
+	if food == head {
+		return l.generateFood(head)
+	} else {
+		for i := 0; i < len(l.snake.body); i++ {
+			if l.snake.body[i] == food {
+				return l.generateFood(head)
+			}
 		}
 	}
 	return food
