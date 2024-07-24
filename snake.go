@@ -81,30 +81,31 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 		return true, nil
 	}
 	// Handle keystrokes
+	canTurn := l.level == LevelIdSnake || (l.level == LevelIdInsertMode && l.viMode == NormalMode)
 	dir := l.snake.direction
 	if ebiten.IsKeyPressed(ebiten.KeyH) {
-		if l.snake.direction != east {
+		if l.snake.direction != east && canTurn {
 			dir = west
 		} else {
 			PlaySound(failOgg)
 		}
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyK) {
-		if l.snake.direction != south {
+		if l.snake.direction != south && canTurn {
 			dir = north
 		} else {
 			PlaySound(failOgg)
 		}
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyJ) {
-		if l.snake.direction != north {
+		if l.snake.direction != north && canTurn {
 			dir = south
 		} else {
 			PlaySound(failOgg)
 		}
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyL) {
-		if l.snake.direction != west {
+		if l.snake.direction != west && canTurn {
 			dir = east
 		} else {
 			PlaySound(failOgg)
@@ -137,28 +138,27 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 		}
 
 		// Check if the snake has collided with the food
-		if l.level == LevelIdSnake || (l.level == LevelIdInsertMode && l.viMode == InsertMode) {
-			if head == l.food {
-				l.food = l.generateFood()
-				l.score++
-				if l.score == lengthForWin {
-					PlaySound(winOgg)
-				}
-				// log.Println("Score: ", l.score)
-			} else {
-				// Remove the tail
-				l.snake.body = l.snake.body[1:]
+		canEat := l.level == LevelIdSnake || (l.level == LevelIdInsertMode && l.viMode == InsertMode)
+		if head == l.food && canEat {
+			l.food = l.generateFood()
+			l.score++
+			if l.score == lengthForWin {
+				PlaySound(winOgg)
+			}
+			// log.Println("Score: ", l.score)
+		} else {
+			// Remove the tail
+			l.snake.body = l.snake.body[1:]
 
-				// Check if the snake has collided with the boundaries or itself
-				if head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight {
+			// Check if the snake has collided with the boundaries or itself
+			if head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight {
+				l.Initialize(l.level)
+				return false, nil
+			}
+			for i := 1; i < len(l.snake.body); i++ {
+				if head == l.snake.body[i] {
 					l.Initialize(l.level)
 					return false, nil
-				}
-				for i := 1; i < len(l.snake.body); i++ {
-					if head == l.snake.body[i] {
-						l.Initialize(l.level)
-						return false, nil
-					}
 				}
 			}
 		}
