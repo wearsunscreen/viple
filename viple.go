@@ -37,10 +37,12 @@ type Level interface {
 
 type LevelID int
 
+// levels are created in the order they are listed here
 const (
 	LevelIdFlappy = iota
 	LevelIdBricksHL
 	LevelIdSnake
+	LevelIdInsertMode
 	LevelIdGemsDD
 	LevelIdGemsVM
 	LevelIdGemsEnd
@@ -204,6 +206,8 @@ func advanceLevelMode(g *Game) {
 		case LevelIdGemsDD:
 			g.curLevel = Level(&LevelGems{})
 		case LevelIdSnake:
+			g.curLevel = Level(&LevelSnake{})
+		case LevelIdInsertMode:
 			g.curLevel = Level(&LevelSnake{})
 		default:
 			log.Fatal("Invalid level")

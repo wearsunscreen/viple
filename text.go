@@ -25,6 +25,13 @@ Q to quit`
 Eat the apples to grow the snake longer.
 
 Q to quit`
+	case LevelIdInsertMode:
+		return `Enter Insert Mode to eat the apple.
+Exit Insert Mode to move the snake.
+
+I - enter insert mode
+Esc - exit insert mode
+Q to quit`
 	case LevelIdBricksHJKL:
 		return `Move the horizontal paddles left and right (H, L)
 and the veritial paddle up and down (J, K) to defend 
@@ -71,6 +78,8 @@ func TitleText(level LevelID) string {
 		return `Bricker!`
 	case LevelIdSnake:
 		return `Snake!`
+	case LevelIdInsertMode:
+		return `Insert Mode!`
 	case LevelIdBricksHJKL:
 		return `Bricker Hayhem!`
 	case LevelIdGemsDD:

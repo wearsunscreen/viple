@@ -47,3 +47,9 @@ This project is still under development. Contributions are welcome.
 
 ## Contributing
 Contributions to Viple are welcome! Want to add a new level? Found a bug? Have ideas for improvements? Open an issue or submit a pull request on the project's GitLab repository.
+
+### How to create a new level
+1. Create a LevelID in viple.go
+1. Add a case for the new LevelID in IntroText() and TitleText()
+1. Add a case for the new LevelID in advanceLevelMode()
+
