@@ -10,12 +10,6 @@ import (
 )
 
 const (
-	NormalMode = iota
-	VisualMode
-	InsertMode
-)
-
-const (
 	blinkInverval = 60 / 3
 	emptyGem      = -1
 	dropDuration  = 60
@@ -45,7 +39,7 @@ type LevelGems struct {
 	gemGrid     Grid[Square]
 	gemImages   []*ebiten.Image
 	level       LevelID
-	viMode      int
+	viMode      VIMode
 	numGems     int
 	swapGem     Coord
 	triplesMask Grid[bool]

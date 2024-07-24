@@ -35,6 +35,7 @@ This project is still under development. Contributions are welcome.
 - Build and deploy the game as a web application using WebAssembly (WASM)
 - Save player progress
 - Test the game on different platforms for compatibility
+- add in game hints (e.g. "enter insert mode to eat the fruit" when snake touches apple in normal mode)
 
 ## Refactoring
 - change functions that take level pointers and change to level methods

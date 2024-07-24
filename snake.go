@@ -8,6 +8,11 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
+/*
+ * LevelSnake implements two levels. The first (LevelIdSnake) provides the play practice of the
+ * navigation keys, h,j,k,l. The second (LevelIDInsertMode) provides the play practice of the navigation
+ * and entering and exiting insert mode.
+ */
 type Direction int
 
 const (
@@ -27,10 +32,11 @@ type Snake struct {
 }
 
 type LevelSnake struct {
-	level LevelID
-	food  Coord
-	score int
-	snake *Snake
+	level  LevelID
+	food   Coord
+	score  int
+	snake  *Snake
+	viMode VIMode
 }
 
 var (
@@ -41,9 +47,15 @@ var (
 )
 
 func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
+	sc := snakeColor
+	if l.level == LevelIdInsertMode && l.viMode == InsertMode {
+		// show different color if able to eat food in insert level
+		sc = color.RGBA{R: 0xBB, G: 0x80, B: 0x80, A: 0xFF}
+	}
+
 	// Draw the snake
 	for _, p := range l.snake.body {
-		vector.DrawFilledRect(screen, float32(p.x*size), float32(p.y*size), float32(size), float32(size), snakeColor, false)
+		vector.DrawFilledRect(screen, float32(p.x*size), float32(p.y*size), float32(size), float32(size), sc, false)
 	}
 
 	// Draw the food
@@ -54,11 +66,12 @@ func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
 }
 
 func (l *LevelSnake) Initialize(id LevelID) {
+	l.viMode = NormalMode
 	l.snake = &Snake{
 		body:      []Coord{{x: 5, y: gridHeight / 2}},
 		direction: east,
 	}
-	l.level = LevelIdSnake
+	l.level = id
 	l.food = l.generateFood()
 	l.score = 0
 }
@@ -97,6 +110,14 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 			PlaySound(failOgg)
 		}
 	}
+	if l.level == LevelIdInsertMode {
+		if ebiten.IsKeyPressed(ebiten.KeyI) {
+			l.viMode = InsertMode
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyEscape) {
+			l.viMode = NormalMode
+		}
+	}
 	l.snake.direction = dir
 
 	if frameCount%30 == 0 {
@@ -116,26 +137,28 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 		}
 
 		// Check if the snake has collided with the food
-		if head == l.food {
-			l.food = l.generateFood()
-			l.score++
-			if l.score == lengthForWin {
-				PlaySound(winOgg)
-			}
-			// log.Println("Score: ", l.score)
-		} else {
-			// Remove the tail
-			l.snake.body = l.snake.body[1:]
+		if l.level == LevelIdSnake || (l.level == LevelIdInsertMode && l.viMode == InsertMode) {
+			if head == l.food {
+				l.food = l.generateFood()
+				l.score++
+				if l.score == lengthForWin {
+					PlaySound(winOgg)
+				}
+				// log.Println("Score: ", l.score)
+			} else {
+				// Remove the tail
+				l.snake.body = l.snake.body[1:]
 
-			// Check if the snake has collided with the boundaries or itself
-			if head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight {
-				l.Initialize(l.level)
-				return false, nil
-			}
-			for i := 1; i < len(l.snake.body); i++ {
-				if head == l.snake.body[i] {
+				// Check if the snake has collided with the boundaries or itself
+				if head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight {
 					l.Initialize(l.level)
 					return false, nil
+				}
+				for i := 1; i < len(l.snake.body); i++ {
+					if head == l.snake.body[i] {
+						l.Initialize(l.level)
+						return false, nil
+					}
 				}
 			}
 		}

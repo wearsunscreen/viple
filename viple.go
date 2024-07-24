@@ -50,12 +50,22 @@ const (
 	LevelIdBricksHJKL
 )
 
+// LevelMode is the mode of the level
 type LevelMode int
 
 const (
 	IntroMode = iota
 	PlayMode
 	OutroMode
+)
+
+// VIModes are modes matching the modes in the vi editor
+type VIMode int
+
+const (
+	NormalMode = iota
+	VisualMode
+	InsertMode
 )
 
 var (
