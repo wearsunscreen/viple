@@ -18,7 +18,7 @@ This project is still under development. Contributions are welcome.
 
 ## To-Do List
 - Add insert mode level, snake level where only in insert mode can you eat, change color of snake by mode
-- Embed viple into a web page with instructions. 
+- Embed viple into a web page with instructions. - https://ebitengine.org/en/documents/webassembly.html
 - center dialogs?
 - Animate the pufferfish character
 - Implement a Snake game to practice the H, J, K, and L navigation keys
