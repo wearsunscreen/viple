@@ -42,8 +42,9 @@ type LevelSnake struct {
 var (
 	gridWidth  = screenWidth / size
 	gridHeight = screenHeight / size
-	snakeColor = color.RGBA{R: 0x00, G: 0xFF, B: 0x00, A: 0xFF}
-	size       = 40 // size of each square in the grid
+	snakeColor = color.RGBA{R: 0x20, G: 0xFF, B: 0x20, A: 0xFF}
+	foodColor  = color.RGBA{0xcc, 0x00, 0x00, 0xa0} // mediumScarletRed
+	size       = 40                                 // size of each square in the grid
 )
 
 func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
@@ -54,12 +55,15 @@ func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
 	}
 
 	// Draw the snake
+	green := sc.G - (0x08 * uint8(len(l.snake.body)))
 	for _, p := range l.snake.body {
+		sc = color.RGBA{sc.R, green, sc.B, sc.A}
 		vector.DrawFilledRect(screen, float32(p.x*size), float32(p.y*size), float32(size), float32(size), sc, false)
+		green += 0x08
 	}
 
 	// Draw the food
-	vector.DrawFilledRect(screen, float32(l.food.x*size), float32(l.food.y*size), float32(size), float32(size), mediumScarletRed, false)
+	vector.DrawFilledRect(screen, float32(l.food.x*size), float32(l.food.y*size), float32(size), float32(size), foodColor, false)
 
 	// Draw the score
 	// ebitenutil.DrawString(screen, fmt.Sprintf("Score: %d", l.score), 10, 10)
