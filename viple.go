@@ -57,6 +57,7 @@ const (
 	IntroMode = iota
 	PlayMode
 	OutroMode
+	QuitMode
 )
 
 // VIModes are modes matching the modes in the vi editor
@@ -103,11 +104,16 @@ func main() {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// draw background
-	g.curLevel.Draw(screen, g.frameCount)
+	if g.mode == QuitMode {
+		screen.Fill(darkButter)
+		os.Exit(0)
+	} else {
+		g.curLevel.Draw(screen, g.frameCount)
 
-	// the UI
-	if g.mode == IntroMode || g.mode == OutroMode {
-		g.ui.Draw(screen)
+		// the UI
+		if g.mode == IntroMode || g.mode == OutroMode {
+			g.ui.Draw(screen)
+		}
 	}
 }
 
@@ -135,7 +141,9 @@ func (g *Game) Update() error {
 
 	// save the keys that were pressed in this frame
 	globalKeys = inpututil.AppendJustPressedKeys(globalKeys)
-	isQuitKeyPressed()
+	if isQuitKeyPressed() {
+		g.mode = QuitMode
+	}
 
 	switch g.mode {
 	case IntroMode:
@@ -156,6 +164,8 @@ func (g *Game) Update() error {
 			g.mode = OutroMode
 			showOutroDialog(g)
 		}
+	case QuitMode:
+		//
 	}
 	return err
 }
@@ -242,10 +252,11 @@ func equals[T comparable](a, b []T) bool {
 	return true
 }
 
-func isQuitKeyPressed() {
+func isQuitKeyPressed() bool {
 	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
-		os.Exit(0)
+		return true
 	}
+	return false
 }
 
 func isCheatKeyPressed() bool {

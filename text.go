@@ -18,28 +18,25 @@ Q -- Quit`
 		return `Clear the bricks to advance to the next level
 
 H to move left
-K to move right
-Q to quit`
+K to move right`
 	case LevelIdSnake:
 		return `Guide the snake using the H, J, K, L keys.
-Eat the apples to grow the snake longer.
+Eat the apples to grow the snake longer.`
 
-Q to quit`
 	case LevelIdInsertMode:
 		return `Enter Insert Mode to eat the apple.
 Exit Insert Mode to move the snake.
 
 I - enter insert mode
-Esc - exit insert mode
-Q to quit`
+Esc - exit insert mode`
+
 	case LevelIdBricksHJKL:
 		return `Move the horizontal paddles left and right (H, L)
 and the veritial paddle up and down (J, K) to defend 
 all four edges
 
-Clear all bricks to advance to the next level.
+Clear all bricks to advance to the next level.`
 
-Q to quit`
 	case LevelIdGemsDD:
 		return `Delete lines to connect 3 matching jewels.
 D, D -- Delete line
@@ -61,9 +58,8 @@ Escape to exit visual mode.
 Make sure deleting connects three identical jewels!`
 	case LevelIdGemsEnd:
 		return `Congratulations you have completed all the learning levels.
-Use all the skills you've learned toto complete this level!
+Use all the skills you've learned toto complete this level!`
 
-Q to quit`
 	default:
 		log.Println("Unknown Level ", level)
 		return "Unknown Level!"

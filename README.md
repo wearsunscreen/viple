@@ -13,7 +13,6 @@ This project is still under development. Contributions are welcome.
 ## To-Do List
 - create video of playthrough
 - loading screen for wasm
-- on quit go back when in webassembly
 - Embed viple into a web page with instructions. - https://ebitengine.org/en/documents/webassembly.html
 - sound on pufferfish collision
 - Add "Next Level" and "Prev Level" buttons to intro dialog or a main menu for selecting levels
@@ -41,6 +40,7 @@ This project is still under development. Contributions are welcome.
 
 ## build in WebAsm
 -- env GOOS=js GOARCH=wasm go build -o viple.wasm github.com/wearsunscreen/viple
+-- cp viple.wasm ../../dev-portfolio/site/viple
 
 ## Contributing
 Contributions to Viple are welcome! Want to add a new level? Found a bug? Have ideas for improvements? Open an issue or submit a pull request on the project's GitLab repository.
