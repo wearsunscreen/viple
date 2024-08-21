@@ -9,31 +9,23 @@ This project is still under development. Contributions are welcome.
 - Cross-platform compatibility
 
 ## MVP
-- change gem, selection, cursor drawing to make all more distinguishable
-- sound on pufferfish collision
-- first pipes should appear sooner in flappy
-- build in WebAsm
--- env GOOS=js GOARCH=wasm go build -o viple.wasm github.com/wearsunscreen/viple
-- create video of playthrough
 
 ## To-Do List
-- Add insert mode level, snake level where only in insert mode can you eat, change color of snake by mode
-- Add "Next Level" and "Prev Level" buttons to intro dialog
+- create video of playthrough
+- loading screen for wasm
+- on quit go back when in webassembly
 - Embed viple into a web page with instructions. - https://ebitengine.org/en/documents/webassembly.html
-- center dialogs?
+- sound on pufferfish collision
+- Add "Next Level" and "Prev Level" buttons to intro dialog or a main menu for selecting levels
+- center dialogs
 - Animate the pufferfish character
-- Implement a Snake game to practice the H, J, K, and L navigation keys
 - Implement a minefield game to practice w and page up/down
 - Improve the overall visual design and aesthetics
 - Develop a maki game to teach word advance
-- Create a main menu for selecting levels
-- Script the pipe gaps in the pufferfish level
 - Add support for quitting the game using commands `:q`, `:quit`, `:exit`, etc.
-- set of valid and invalid key strokes per level
 - Create jeopardy like game level to quiz write and exit commands
 - Add a timer to levels to challenge the user
 - Implement scaling, fading and rotation animations for disappearing gems and bricks
-- Build and deploy the game as a web application using WebAssembly (WASM)
 - Save player progress
 - Test the game on different platforms for compatibility
 - add in game hints (e.g. "enter insert mode to eat the fruit" when snake touches apple in normal mode)
@@ -46,6 +38,9 @@ This project is still under development. Contributions are welcome.
 
 ## Known Defects
 - mixing d and v can get the end level confused.
+
+## build in WebAsm
+-- env GOOS=js GOARCH=wasm go build -o viple.wasm github.com/wearsunscreen/viple
 
 ## Contributing
 Contributions to Viple are welcome! Want to add a new level? Found a bug? Have ideas for improvements? Open an issue or submit a pull request on the project's GitLab repository.

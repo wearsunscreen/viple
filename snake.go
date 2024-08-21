@@ -48,6 +48,7 @@ var (
 )
 
 func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
+	screen.Fill(darkCoal)
 	sc := snakeColor
 	if l.level == LevelIdInsertMode && l.viMode == InsertMode {
 		// show different color if able to eat food in insert level
