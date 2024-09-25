@@ -142,7 +142,8 @@ func (g *Game) Update() error {
 	// save the keys that were pressed in this frame
 	globalKeys = inpututil.AppendJustPressedKeys(globalKeys)
 	if isQuitKeyPressed() {
-		g.mode = QuitMode
+		// commenting out quit for WASM builds
+		//g.mode = QuitMode
 	}
 
 	switch g.mode {

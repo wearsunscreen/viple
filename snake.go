@@ -50,17 +50,27 @@ var (
 func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
 	screen.Fill(darkCoal)
 	sc := snakeColor
+	var green = sc.G
+	var red = sc.R
+
 	if l.level == LevelIdInsertMode && l.viMode == InsertMode {
 		// show different color if able to eat food in insert level
-		sc = color.RGBA{R: 0xBB, G: 0x80, B: 0x80, A: 0xFF}
+		sc = color.RGBA{R: 0xCC, G: 0x20, B: 0x40, A: 0xFF}
+		red = sc.R - (0x08 * uint8(len(l.snake.body)))
+		green = sc.G
+	} else {
+		green = sc.G - (0x08 * uint8(len(l.snake.body)))
 	}
 
-	// Draw the snake
-	green := sc.G - (0x08 * uint8(len(l.snake.body)))
+	// Draw the snake from tail to head
 	for _, p := range l.snake.body {
-		sc = color.RGBA{sc.R, green, sc.B, sc.A}
+		sc = color.RGBA{red, green, sc.B, sc.A}
 		vector.DrawFilledRect(screen, float32(p.x*size), float32(p.y*size), float32(size), float32(size), sc, false)
-		green += 0x08
+		if l.level == LevelIdInsertMode && l.viMode == InsertMode {
+			red += 0x08
+		} else {
+			green += 0x08
+		}
 	}
 
 	// Draw the food
