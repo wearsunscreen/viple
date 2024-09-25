@@ -22,10 +22,6 @@ const (
 	west
 )
 
-const (
-	lengthForWin = 25
-)
-
 type Snake struct {
 	body      []Coord
 	direction Direction
@@ -40,11 +36,12 @@ type LevelSnake struct {
 }
 
 var (
-	gridWidth  = screenWidth / size
-	gridHeight = screenHeight / size
-	snakeColor = color.RGBA{R: 0x20, G: 0xFF, B: 0x20, A: 0xFF}
-	foodColor  = color.RGBA{0xcc, 0x00, 0x00, 0xa0} // mediumScarletRed
-	size       = 40                                 // size of each square in the grid
+	gridWidth    = screenWidth / size
+	gridHeight   = screenHeight / size
+	snakeColor   = color.RGBA{R: 0x20, G: 0xFF, B: 0x20, A: 0xFF}
+	foodColor    = color.RGBA{0xcc, 0x00, 0x00, 0xa0} // mediumScarletRed
+	size         = 40                                 // size of each square in the grid
+	lengthForWin = 22
 )
 
 func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
@@ -89,6 +86,9 @@ func (l *LevelSnake) Initialize(id LevelID) {
 	l.level = id
 	l.food = l.generateFood(Coord{x: 0, y: 0})
 	l.score = 0
+	if l.level == LevelIdInsertMode {
+		lengthForWin -= 5
+	}
 }
 
 func (l *LevelSnake) Update(frameCount int) (bool, error) {
