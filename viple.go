@@ -96,6 +96,7 @@ func main() {
 
 	ebiten.SetWindowSize(gameDimensions())
 	ebiten.SetWindowTitle(version)
+	PlaySound(musicOgg)
 
 	if err := ebiten.RunGame(newGame()); err != nil {
 		log.Fatal(err)

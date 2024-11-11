@@ -30,6 +30,9 @@ var brickOgg []byte
 //go:embed resources/paddle.ogg
 var paddleOgg []byte
 
+//go:embed resources/music.ogg
+var musicOgg []byte
+
 type AudioPlayer struct {
 	audioPlayer *audio.Player
 }
@@ -50,6 +53,31 @@ func PlaySound(ogg []byte) error {
 		return err
 	}
 	p, err := audioContext.NewPlayer(s)
+	if err != nil {
+		return err
+	}
+	player := &AudioPlayer{
+		audioPlayer: p,
+	}
+
+	player.audioPlayer.Play()
+
+	return nil
+}
+
+func PlaySoundForever(ogg []byte) error {
+	type audioStream interface {
+		io.ReadSeeker
+		Length() int64
+	}
+	var s audioStream
+	var err error
+	s, err = vorbis.DecodeWithoutResampling(bytes.NewReader(ogg))
+	if err != nil {
+		return err
+	}
+	loop := audio.NewInfiniteLoop(s, s.Length())
+	p, err := audioContext.NewPlayer(loop)
 	if err != nil {
 		return err
 	}
