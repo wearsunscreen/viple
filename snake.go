@@ -87,7 +87,7 @@ func (l *LevelSnake) Initialize(id LevelID) {
 	l.food = l.generateFood(Coord{x: 0, y: 0})
 	l.score = 0
 	if l.level == LevelIdInsertMode {
-		lengthForWin -= 5
+		lengthForWin -= 3
 	}
 }
 
