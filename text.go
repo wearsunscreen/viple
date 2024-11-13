@@ -13,7 +13,12 @@ Pass seven obstacles without fail to advance to the next level.
 
 J -- Up
 K -- Down
-Q -- Quit`
+Q -- Quit
+
+
+Game by John Crane, https://github.com/wearsunscreen/viple
+
+Music by Gianni Bellucci, all rights reserved`
 	case LevelIdBricksHL:
 		return `Clear the bricks to advance to the next level
 
