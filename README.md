@@ -17,22 +17,17 @@ Contributions to Viple are welcome! Want to add a new level? Found a bug? Have i
 - Cross-platform compatibility
 
 ## To-Do List
+- Implement a zuma game to practice w and insert
 - change color of 10th puffyfish obstacle
-- create video of playthrough
-- loading screen for wasm
 - Embed viple into a web page with instructions. - https://ebitengine.org/en/documents/webassembly.html
 - sound on pufferfish collision
+- Implement scaling, fading and rotation animations for disappearing gems and bricks
+- Improve the overall visual design and aesthetics
+- Save player progress
 - Test the game on different platforms for compatibility
 - Add "Next Level" and "Prev Level" buttons to intro dialog or a main menu for selecting levels
 - Animate the pufferfish character
 - center dialogs
-- Implement a zuma game to practice w and insert
-- Improve the overall visual design and aesthetics
-- Develop a maki game to teach word advance
-- Add support for quitting the game using commands `:q`, `:quit`, `:exit`, etc.
-- Implement scaling, fading and rotation animations for disappearing gems and bricks
-- Save player progress
-- add in game hints (e.g. "enter insert mode to eat the fruit" when snake touches apple in normal mode)
 
 ## build in WebAsm
 -- env GOOS=js GOARCH=wasm go build -o viple.wasm github.com/wearsunscreen/viple
