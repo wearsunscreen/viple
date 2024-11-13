@@ -18,7 +18,7 @@ Q -- Quit
 
 Game by John Crane, https://github.com/wearsunscreen/viple
 
-Music by Gianni Bellucci, all rights reserved`
+Music and SFX by Gianni Bellucci, all rights reserved`
 	case LevelIdBricksHL:
 		return `Clear the bricks to advance to the next level
 
