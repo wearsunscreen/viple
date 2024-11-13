@@ -159,8 +159,9 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 			l.score++
 			if l.score == lengthForWin {
 				PlaySound(winOgg)
+			} else {
+				PlaySound(tripleOgg)
 			}
-			// log.Println("Score: ", l.score)
 		} else {
 			// Remove the tail
 			l.snake.body = l.snake.body[1:]
@@ -168,11 +169,13 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 			// Check if the snake has collided with the boundaries or itself
 			if head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight {
 				l.Initialize(l.level)
+				PlaySound(failOgg)
 				return false, nil
 			}
 			for i := 1; i < len(l.snake.body); i++ {
 				if head == l.snake.body[i] {
 					l.Initialize(l.level)
+					PlaySound(failOgg)
 					return false, nil
 				}
 			}
