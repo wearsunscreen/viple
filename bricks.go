@@ -29,6 +29,7 @@ type LevelBricksHL struct {
 	brickWidth   int
 	brickLeft    int
 	brickTop     int
+	game         *Game
 	level        LevelID
 	minimumSpeed float64
 	numBrickRows int
@@ -181,21 +182,21 @@ func (l *LevelBricksHL) CheckWallCollisions() {
 
 	// Check for ball off bottom of screen
 	if l.ballY+ballRadius > screenHeight {
-		l.Initialize(l.level)
+		l.Initialize(l.level, l.game)
 	}
 
 	if l.level == LevelIdBricksHJKL {
 		// Check for ball off top of screen
 		if l.ballY+ballRadius < 0 {
-			l.Initialize(l.level)
+			l.Initialize(l.level, l.game)
 		}
 		// Check for ball off left of screen
 		if l.ballX+ballRadius < 0 {
-			l.Initialize(l.level)
+			l.Initialize(l.level, l.game)
 		}
 		// Check for ball off right of screen
 		if l.ballX+ballRadius > screenWidth {
-			l.Initialize(l.level)
+			l.Initialize(l.level, l.game)
 		}
 	}
 }
@@ -229,8 +230,9 @@ func (l *LevelBricksHL) Draw(screen *ebiten.Image, frameCount int) {
 	}
 }
 
-func (l *LevelBricksHL) Initialize(id LevelID) {
+func (l *LevelBricksHL) Initialize(id LevelID, g *Game) {
 	l.level = id
+	l.game = g
 	switch id {
 	case LevelIdBricksHL:
 		l.numBrickRows = 3

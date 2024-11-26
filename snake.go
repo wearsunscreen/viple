@@ -25,9 +25,11 @@ const (
 type Snake struct {
 	body      []Coord
 	direction Direction
+	Game
 }
 
 type LevelSnake struct {
+	game   *Game
 	level  LevelID
 	food   Coord
 	score  int
@@ -77,7 +79,8 @@ func (l *LevelSnake) Draw(screen *ebiten.Image, frameCount int) {
 	// ebitenutil.DrawString(screen, fmt.Sprintf("Score: %d", l.score), 10, 10)
 }
 
-func (l *LevelSnake) Initialize(id LevelID) {
+func (l *LevelSnake) Initialize(id LevelID, g *Game) {
+	l.game = g
 	l.viMode = NormalMode
 	l.snake = &Snake{
 		body:      []Coord{{x: 5, y: gridHeight / 2}},
@@ -168,13 +171,13 @@ func (l *LevelSnake) Update(frameCount int) (bool, error) {
 
 			// Check if the snake has collided with the boundaries or itself
 			if head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight {
-				l.Initialize(l.level)
+				l.Initialize(l.level, l.game)
 				PlaySound(failOgg)
 				return false, nil
 			}
 			for i := 1; i < len(l.snake.body); i++ {
 				if head == l.snake.body[i] {
-					l.Initialize(l.level)
+					l.Initialize(l.level, l.game)
 					PlaySound(failOgg)
 					return false, nil
 				}

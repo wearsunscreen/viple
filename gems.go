@@ -554,7 +554,7 @@ func (l *LevelGems) handleKeyVisualMode(key ebiten.Key, frameCount int) {
 	}
 }
 
-func (l *LevelGems) Initialize(id LevelID) {
+func (l *LevelGems) Initialize(id LevelID, g *Game) {
 	l.level = id
 	switch id {
 	case LevelIdGemsEnd:

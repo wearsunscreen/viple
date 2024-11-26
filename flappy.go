@@ -98,7 +98,7 @@ func (l *LevelFlappy) Draw(screen *ebiten.Image, frameCount int) {
 	screen.DrawImage(l.fishImage, op)
 }
 
-func (l *LevelFlappy) Initialize(id LevelID) {
+func (l *LevelFlappy) Initialize(id LevelID, g *Game) {
 	l.fishY = screenHeight / 2
 	l.startingFrame = 0
 	l.numPipesPast = 0
