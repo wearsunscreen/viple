@@ -6,7 +6,6 @@ import (
 	_ "image/png"
 	"log"
 	"math/rand"
-	"os"
 	"time"
 
 	"golang.org/x/exp/constraints"
@@ -53,13 +52,6 @@ const (
 // LevelMode is the mode of the level
 type LevelMode int
 
-const (
-	IntroMode = iota
-	PlayMode
-	OutroMode
-	QuitMode
-)
-
 // VIModes are modes matching the modes in the vi editor
 type VIMode int
 
@@ -77,7 +69,6 @@ var (
 type Game struct {
 	currentLevel LevelID
 	curLevel     Level
-	mode         LevelMode
 	frameCount   int
 	lastUpdate   time.Time
 	ui           *ebitenui.UI
@@ -104,18 +95,14 @@ func main() {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// draw background
-	if g.mode == QuitMode {
-		screen.Fill(darkButter)
-		os.Exit(0)
-	} else {
-		g.curLevel.Draw(screen, g.frameCount)
+	g.curLevel.Draw(screen, g.frameCount)
 
-		// the UI
-		if g.mode == IntroMode || g.mode == OutroMode {
-			g.ui.Draw(screen)
-		}
-	}
+	// MessageLevel should call
+	// g.ui.Draw(screen)
+
+	// quitting if the build is an executable
+	// screen.Fill(darkButter)
+	// os.Exit(0)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -125,7 +112,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func (g *Game) Update() error {
 	var levelOver bool
-	var err error
+	err := error(nil)
 
 	// for profiling
 	now := time.Now()
@@ -147,27 +134,19 @@ func (g *Game) Update() error {
 		//g.mode = QuitMode
 	}
 
-	switch g.mode {
-	case IntroMode:
-		g.ui.Update()
-		checkForKeystroke(ebiten.KeyEnter, func() { advanceLevelMode(g) })
-	case OutroMode:
-		g.ui.Update()
-		checkForKeystroke(ebiten.KeyEnter, func() { advanceLevelMode(g) })
-	case PlayMode:
-		// remove duplicates of keys that are held down
-		removeDuplicatesOf(&globalKeys, ebiten.KeyH)
-		removeDuplicatesOf(&globalKeys, ebiten.KeyJ)
-		removeDuplicatesOf(&globalKeys, ebiten.KeyK)
-		removeDuplicatesOf(&globalKeys, ebiten.KeyL)
-		levelOver, err = g.curLevel.Update(g.frameCount)
-		if levelOver {
-			PlaySound(winOgg)
-			g.mode = OutroMode
-			showOutroDialog(g)
-		}
-	case QuitMode:
-		//
+	// MessageLevel should call
+	// g.ui.Update()
+	// checkForKeystroke(ebiten.KeyEnter, func() { advanceLevelMode(g) })
+
+	// remove duplicates of keys that are held down
+	removeDuplicatesOf(&globalKeys, ebiten.KeyH)
+	removeDuplicatesOf(&globalKeys, ebiten.KeyJ)
+	removeDuplicatesOf(&globalKeys, ebiten.KeyK)
+	removeDuplicatesOf(&globalKeys, ebiten.KeyL)
+	levelOver, err = g.curLevel.Update(g.frameCount)
+	if levelOver {
+		PlaySound(winOgg)
+		advanceLevelMode(g)
 	}
 	return err
 }
@@ -197,45 +176,32 @@ func gameDimensions() (width int, height int) {
 
 // advance to the next mode
 func advanceLevelMode(g *Game) {
-	if g.mode == OutroMode {
-		// advance to next Level if current level has been won
-		if g.currentLevel != LevelIdGemsEnd {
-			g.currentLevel += 1
-		}
-		clearKeystrokes()
-		globalKeys = globalKeys[:0] // clear the keys
+	// advance to next Level, if on last level repeat
+	if g.currentLevel != LevelIdGemsEnd {
+		g.currentLevel += 1
 	}
-	if g.mode == IntroMode {
-		g.mode = PlayMode
-	} else if g.mode == OutroMode {
-		g.mode = IntroMode
-		showIntroDialog(g)
-	} else {
-		log.Println("Closing UI when UI is not showing?")
+	clearKeystrokes()
+	globalKeys = globalKeys[:0] // clear the keys
+
+	switch g.currentLevel {
+	case LevelIdBricksHL:
+		g.curLevel = Level(&LevelBricksHL{})
+	case LevelIdFlappy:
+		g.curLevel = Level(&LevelFlappy{})
+	case LevelIdGemsVM:
+		g.curLevel = Level(&LevelGems{})
+	case LevelIdGemsEnd:
+		g.curLevel = Level(&LevelGems{})
+	case LevelIdGemsDD:
+		g.curLevel = Level(&LevelGems{})
+	case LevelIdSnake:
+		g.curLevel = Level(&LevelSnake{})
+	case LevelIdInsertMode:
+		g.curLevel = Level(&LevelSnake{})
+	default:
+		log.Fatal("Invalid level")
 	}
-	if g.mode == IntroMode {
-		switch g.currentLevel {
-		case LevelIdBricksHL:
-			g.curLevel = Level(&LevelBricksHL{})
-		// case LevelIdBricksHJKL:
-		// 	g.curLevel = Level(&LevelBricksHL{})
-		case LevelIdFlappy:
-			g.curLevel = Level(&LevelFlappy{})
-		case LevelIdGemsVM:
-			g.curLevel = Level(&LevelGems{})
-		case LevelIdGemsEnd:
-			g.curLevel = Level(&LevelGems{})
-		case LevelIdGemsDD:
-			g.curLevel = Level(&LevelGems{})
-		case LevelIdSnake:
-			g.curLevel = Level(&LevelSnake{})
-		case LevelIdInsertMode:
-			g.curLevel = Level(&LevelSnake{})
-		default:
-			log.Fatal("Invalid level")
-		}
-		g.curLevel.Initialize(g.currentLevel)
-	}
+	g.curLevel.Initialize(g.currentLevel)
 }
 
 func clearKeystrokes() {
@@ -311,7 +277,6 @@ func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateab
 func newGame() *Game {
 	g := Game{}
 
-	g.mode = IntroMode
 	g.curLevel = Level(&LevelFlappy{})
 	g.curLevel.Initialize(LevelIdFlappy)
 
@@ -340,8 +305,6 @@ func newGame() *Game {
 	}
 
 	g.ui = ui
-
-	showIntroDialog(&g)
 
 	return &g
 }
