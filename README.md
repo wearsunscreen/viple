@@ -17,9 +17,14 @@ Contributions to Viple are welcome! Want to add a new level? Found a bug? Have i
 - Cross-platform compatibility
 
 ## To-Do List
+- Implement a zuma game to practice w, yank and put
+- better colors for pufferfish level
+- add message that says you have completed all levels, 
+- add next level, current level, previous level props to all levels to allow forward backward and repeat
 - toggle music on and off
 - toggle sound on and off
-- Implement a zuma game to practice w and insert
+- add difficulty level
+- pause key
 - change color of 10th puffyfish obstacle
 - Embed viple into a web page with instructions. - https://ebitengine.org/en/documents/webassembly.html
 - sound on pufferfish collision

@@ -333,8 +333,9 @@ func (l *LevelBricksHL) UpdatePaddlePositions() {
 			l.initBallMovement()
 		}
 	}
-	// limit paddle movement within screen bounds
-	l.paddlesX = limitToRange(l.paddlesX, 0, screenWidth-paddlesXWidth)
+	// limit paddle movement within screen bounds,
+	// allow to move off screen by 1/2 paddle width
+	l.paddlesX = limitToRange(l.paddlesX, 0-paddlesXWidth/2, screenWidth-paddlesXWidth/2)
 	if l.level == LevelIdBricksHJKL {
 		l.paddlesY = limitToRange(l.paddlesY, 0, screenHeight-paddlesYHeight)
 	}

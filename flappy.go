@@ -21,8 +21,9 @@ const (
 )
 
 var (
-	colorPipe     = darkAluminium
-	colorPastPipe = mediumGreen
+	colorPipe     = mediumCoal
+	colorPastPipe = darkGreen
+	seaColor      = mediumAluminium
 )
 
 type LevelFlappy struct {
@@ -81,7 +82,7 @@ func (l *LevelFlappy) checkPipeCollisions() {
 
 func (l *LevelFlappy) Draw(screen *ebiten.Image, frameCount int) {
 	// Draw background
-	screen.Fill(mediumSkyBlue)
+	screen.Fill(seaColor)
 
 	// top pipe
 	for _, p := range l.pipes {
