@@ -20,21 +20,18 @@ Contributions to Viple are welcome! Want to add a new level? Found a bug? Have i
 - Implement a zuma game to practice w, yank and put
 - better colors for pufferfish level
 - add message that says you have completed all levels, 
+- animate the pufferfish character
+- center dialogs
 - add next level, current level, previous level props to all levels to allow forward backward and repeat
+- Add "Next Level" and "Prev Level" buttons to intro dialog or a main menu for selecting levels
 - toggle music on and off
 - toggle sound on and off
 - add difficulty level
 - pause key
-- change color of 10th puffyfish obstacle
-- Embed viple into a web page with instructions. - https://ebitengine.org/en/documents/webassembly.html
-- sound on pufferfish collision
 - Implement scaling, fading and rotation animations for disappearing gems and bricks
 - Improve the overall visual design and aesthetics
 - Save player progress
-- Test the game on different platforms for compatibility
-- Add "Next Level" and "Prev Level" buttons to intro dialog or a main menu for selecting levels
-- Animate the pufferfish character
-- center dialogs
+- environment variable for build type, wasm or app
 
 ## build in WebAsm
 -- env GOOS=js GOARCH=wasm go build -o viple.wasm github.com/wearsunscreen/viple
