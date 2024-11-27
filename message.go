@@ -18,6 +18,7 @@ type LevelMessage struct {
 func showIntroDialog(g *Game) {
 	// This loads a font and creates a font face.
 	ttfFont, err := truetype.Parse(goregular.TTF)
+
 	if err != nil {
 		log.Fatal("Error Parsing Font", err)
 	}
@@ -28,10 +29,13 @@ func showIntroDialog(g *Game) {
 	textFace := truetype.NewFace(ttfFont, &truetype.Options{
 		Size: 20,
 	})
+
 	titleFace := truetype.NewFace(ttfFont, &truetype.Options{
 		Size: 32,
 	})
+
 	innerContainer := widget.NewContainer(
+
 		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(dlgBackground)),
 		// the container will use an anchor layout to layout its single child widget
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
@@ -49,11 +53,13 @@ func showIntroDialog(g *Game) {
 	g.ui.Container.AddChild(innerContainer)
 
 	titleText := widget.NewText(
+
 		widget.TextOpts.Text(TitleText(g.currentLevel), titleFace, dlgText),
 	)
 	innerContainer.AddChild(titleText)
 
 	level1IntroText := widget.NewText(
+
 		widget.TextOpts.Text(IntroText(g.currentLevel), textFace, dlgText),
 	)
 	innerContainer.AddChild(level1IntroText)
@@ -63,6 +69,7 @@ func showIntroDialog(g *Game) {
 	}))
 
 	b := widget.NewButton(
+
 		widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 			Stretch: true,
 		})),
@@ -75,7 +82,6 @@ func showIntroDialog(g *Game) {
 		}),
 	)
 	innerContainer.AddChild(b)
-
 }
 
 func (l *LevelMessage) Draw(screen *ebiten.Image, frameCount int) {

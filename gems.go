@@ -197,7 +197,7 @@ func (l *LevelGems) Draw(screen *ebiten.Image, frameCount int) {
 	case LevelIdGemsVM:
 		s := l.gemGrid.Get(l.cursorGem)
 		s.drawBackground(screen, cursorColors[blink])
-	case LevelIdGemsDD:
+	case LevelIdGemsDelete:
 		l.gemGrid.ForEach(func(p Coord, s Square) {
 			if p.y == l.cursorGem.y {
 				s.drawBackground(screen, cursorColors[blink])
@@ -226,7 +226,7 @@ func (l *LevelGems) drawCursor(screen *ebiten.Image, frameCount int) {
 	case LevelIdGemsVM:
 		s := l.gemGrid.Get(l.cursorGem)
 		s.drawBackground(screen, cursorColors[blink])
-	case LevelIdGemsDD:
+	case LevelIdGemsDelete:
 		// highlight the entire row
 		l.gemGrid.ForEach(func(p Coord, s Square) {
 			if p.y == l.cursorGem.y {
@@ -509,7 +509,7 @@ func (l *LevelGems) handleKeyNormalMode(key ebiten.Key, frameCount int) {
 		clearKeystrokes()
 	case ebiten.KeyV:
 		// entering VisualMode (where we do swaps)
-		if l.level != LevelIdGemsDD {
+		if l.level != LevelIdGemsDelete {
 			l.swapGem = l.cursorGem
 			l.viMode = VisualMode
 		}
@@ -563,7 +563,7 @@ func (l *LevelGems) Initialize(id LevelID, g *Game) {
 	case LevelIdGemsVM:
 		l.numGems = 5
 		numGemColumns = 5
-	case LevelIdGemsDD:
+	case LevelIdGemsDelete:
 		l.numGems = 4
 		numGemColumns = 8
 	}

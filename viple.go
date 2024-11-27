@@ -24,7 +24,7 @@ import (
 const (
 	screenWidth  = 800
 	screenHeight = 600
-	version      = "Viple 0.1"
+	version      = "Viple 1.0.1"
 )
 
 // Level interface
@@ -38,13 +38,28 @@ type LevelID int
 
 // levels are created in the order they are listed here
 const (
-	LevelIdFlappy = iota
+	LevelIdMsgWelcome = iota
+	LevelIdFlappy
+	LevelIdMsgFlappyDone
+	LevelIdMsgBricksIntro
 	LevelIdBricksHL
+	LevelIdMsgBricksDone
+	LevelIdMsgSnakeIntro
 	LevelIdSnake
+	LevelIdMsgSnakeDone
+	LevelIdMsgInsertIntro
 	LevelIdInsertMode
-	LevelIdGemsDD
+	LevelIdMsgInsertDone
+	LevelIdMsgDeleteIntro
+	LevelIdGemsDelete
+	LevelIdMsgDeleteDone
+	LevelIdMsgVMIntro
 	LevelIdGemsVM
+	LevelIdMsgVMDone
+	LevelIdMsgChallengeIntro
 	LevelIdGemsEnd
+	LevelIdMsgChallengeDone
+	LevelIdMsgAllLevelsDone
 	// deprecated levels below
 	LevelIdBricksHJKL
 )
@@ -173,27 +188,67 @@ func gameDimensions() (width int, height int) {
 // advance to the next mode
 func advanceLevelMode(g *Game) {
 	// advance to next Level, if on last level repeat
-	if g.currentLevel != LevelIdGemsEnd {
+	if g.currentLevel == LevelIdMsgAllLevelsDone {
+		g.currentLevel -= 2
+	} else {
 		g.currentLevel += 1
 	}
 	clearKeystrokes()
 	globalKeys = globalKeys[:0] // clear the keys
 
 	switch g.currentLevel {
+	// unique levels
 	case LevelIdBricksHL:
 		g.curLevel = Level(&LevelBricksHL{})
 	case LevelIdFlappy:
 		g.curLevel = Level(&LevelFlappy{})
+
+	// gems levels
 	case LevelIdGemsVM:
-		g.curLevel = Level(&LevelGems{})
+		fallthrough
 	case LevelIdGemsEnd:
+		fallthrough
+	case LevelIdGemsDelete:
 		g.curLevel = Level(&LevelGems{})
-	case LevelIdGemsDD:
-		g.curLevel = Level(&LevelGems{})
+
+	// snake levels
 	case LevelIdSnake:
-		g.curLevel = Level(&LevelSnake{})
+		fallthrough
 	case LevelIdInsertMode:
 		g.curLevel = Level(&LevelSnake{})
+
+	// Message levels
+	case LevelIdMsgFlappyDone:
+		fallthrough
+	case LevelIdMsgBricksIntro:
+		fallthrough
+	case LevelIdMsgBricksDone:
+		fallthrough
+	case LevelIdMsgSnakeIntro:
+		fallthrough
+	case LevelIdMsgSnakeDone:
+		fallthrough
+	case LevelIdMsgInsertIntro:
+		fallthrough
+	case LevelIdMsgInsertDone:
+		fallthrough
+	case LevelIdMsgDeleteIntro:
+		fallthrough
+	case LevelIdMsgDeleteDone:
+		fallthrough
+	case LevelIdMsgVMIntro:
+		fallthrough
+	case LevelIdMsgVMDone:
+		fallthrough
+	case LevelIdMsgChallengeIntro:
+		fallthrough
+	case LevelIdMsgChallengeDone:
+		fallthrough
+	case LevelIdMsgAllLevelsDone:
+		fallthrough
+	case LevelIdMsgWelcome:
+		g.curLevel = Level(&LevelMessage{})
+
 	default:
 		log.Fatal("Invalid level")
 	}
@@ -273,8 +328,7 @@ func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateab
 func newGame() *Game {
 	g := Game{}
 
-	g.curLevel = Level(&LevelFlappy{})
-	g.curLevel.Initialize(LevelIdFlappy, &g)
+	g.curLevel = Level(&LevelMessage{})
 
 	res, err := newUIResources()
 	if err != nil {
@@ -296,11 +350,11 @@ func newGame() *Game {
 	)
 
 	// This adds the root container to the UI, so that it will be rendered.
-	ui := &ebitenui.UI{
+	g.ui = &ebitenui.UI{
 		Container: rootContainer,
 	}
 
-	g.ui = ui
+	g.curLevel.Initialize(LevelIdMsgWelcome, &g)
 
 	return &g
 }
