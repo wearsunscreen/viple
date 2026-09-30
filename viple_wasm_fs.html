@@ -10,12 +10,6 @@
         body {
             background-color: black;
             background-image: radial-gradient(rgba(0, 60, 0, 0.60), black 120%);
-            background-attachment: fixed;
-            color: #11e411;
-            font-family: 'Courier Prime', monospace;
-            font-size: 12px;
-            padding: 5px;
-            text-shadow: 0 0 4px #C8C8C8;
         }
     </style>
     <script src="wasm_exec.js"></script>
@@ -23,6 +17,15 @@
 
 <body>
     <script>
+        let elem = document.documentElement;
+        elem
+            .requestFullscreen({ navigationUI: "hide" })
+            .then(() => { })
+            .catch((err) => {
+                console.log(
+                    `An error occurred while trying to switch into fullscreen mode: ${err.message} (${err.name})`,
+                );
+            });
         // Polyfill
         let loading = true;
         if (!WebAssembly.instantiateStreaming) {
