@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>johncrane.dev portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier Prime&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css" />
+
+    <style>
+        body {
+            max-width: 1200px;
+            font-size: 12px;
+
+            a:link {
+                color: rgb(174, 216, 248);
+                text-shadow: 0 0 2px #C8C8C8;
+            }
+
+            a:visited {
+                color: rgb(154, 212, 146);
+                text-shadow: 0 0 2px #C8C8C8;
+            }
+        }
+
+        article {
+            margin-left: 2em;
+        }
+    </style>
+</head>
+
+<body>
+    <table>
+        <tr>
+            <td style="vertical-align:top;">
+                <iframe src="viple_wasm.html" width="800" height="600"></iframe>
+                <p>&nbsp;</p>
+                <p><a href="viple_wasm_fs.html">Play in Full Screen</a></p>
+                <br>
+                <p>Stuck? Watch a <a href="https://www.youtube.com/watch?v=dnHybsD2_lw">playthrough</a></p>
+                <br>
+                <h2>Other games to help learn Viple</h2>
+                <ul>
+                    <li><a href="https://vim-adventures.com/">Vim Adventure</a></li>
+                    <li><a href="https://vim-racer.com/">Vim Racer</a></li>
+                    <li><a href="https://github.com/jmoon018/PacVim">PacVim</a></li>
+                </ul>
+            </td>
+            <td>
+                <article>
+                    <h3>Level 1: Puffy Fish!</h3>
+                    <p>Pass seven obstacles to advance to next level.</p>
+                    <p>J -- Down<br>
+                        K -- Up<br>
+                        C -- Skip level
+                </article>
+                <article>
+                    <h3>Level 2: Bricker!</h3>
+                    <p>Clear the bricks to advance to the next level.</p>
+                    <p>H -- Left<br>
+                        L -- Right<br>
+                        C -- Skip level
+                </article>
+                <article>
+                    <h3>Level 3: Snake!</h3>
+                    <p>Guide the snake to eat the apples to grow the snake.</p>
+                    <p>H, J, K, L -- Left, Down, Up, Right<br>
+                        C -- Skip level
+                </article>
+                <article>
+                    <h3>Level 4: Insert Mode!</h3>
+                    <p>Enter Insert Mode to eat the apple. Exit Insert Mode to turn the snake.</p>
+                    <p>H, J, K, L -- Left, Down, Up, Right<br>
+                        I -- Enter Insert Mode<br />
+                        Esc -- Exit Insert Mode<br />
+                </article>
+                <article>
+                    <h3>Level 5: Connect Three!</h3>
+                    <p>Delete lines to connect 3 matching jewels.
+                        Matching gems will turn the squares gold.
+                        Turn all squares gold to advance to the next level.</p>
+                    <p>H, J, K, L -- Left, Down, Up, Right<br>
+                        D, D -- Delete line<br>
+                        D, [2, 3, 4, ...], Enter -- Delete multiple lines<br>
+                    </p>
+                </article>
+                <article>
+                    <h3>Level 6: Visual Mode!</h3>
+                    <p>Enter Visual Mode to select gems to delete.
+                        Turn all squares gold to advance to the next level.</p>
+                    <p>
+                    <p>H, J, K, L -- Left, Down, Up, Right<br>
+                        V -- Enter Visual Mode<br>
+                        D -- Delete selection<br>
+                        Esc -- Exit Visual Mode<br>
+                    </p>
+                </article>
+                <article>
+                    <h3>Level 7: Challenge Game!</h3>
+                    <p>Use the skills you have learned to turn all squares to gold.</p>
+                    <p>H, J, K, L -- Left, Down, Up, Right<br>
+                        V -- Enter Visual Mode<br>
+                        I -- Enter Insert Mode<br>
+                        Esc -- Exit Visual/Insert Mode<br>
+                        D -- Delete selection<br>
+                        D, D -- Delete line<br>
+                        D, [2, 3, 4, ...], Enter -- Delete multiple lines<br>
+                    </p>
+                </article>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
